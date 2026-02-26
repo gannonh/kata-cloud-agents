@@ -1,5 +1,6 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { cors } from 'hono/cors';
+import { authMiddleware } from './middleware/auth.js';
 import { jsonError } from './middleware/error-handler.js';
 import { requestContextMiddleware } from './middleware/request-context.js';
 import { requestLoggerMiddleware } from './middleware/request-logger.js';
@@ -12,8 +13,10 @@ export function createGatewayApp(config: GatewayConfig, deps: GatewayDeps) {
   app.use('*', requestContextMiddleware);
   app.use('*', cors({ origin: config.allowedOrigins, credentials: true }));
   app.use('*', requestLoggerMiddleware(deps.logger));
+  app.use('/api/*', authMiddleware(config, deps));
 
   registerHealthRoute(app);
+  app.get('/api/teams', (c) => c.json({ ok: true }));
 
   app.notFound((c) => jsonError(c, 404, 'NOT_FOUND', 'Route not found'));
   app.onError((err, c) => {

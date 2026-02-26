@@ -42,3 +42,9 @@ export type GatewayDeps = {
   sessionStore: SessionStoreAdapter;
   now: () => Date;
 };
+
+export type GatewayVars = {
+  requestId: string;
+  startedAtMs: number;
+  principal?: AuthPrincipal;
+};
