@@ -3,10 +3,30 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
   "scripts": {
-    "build": "node -e \"console.log('build not implemented yet')\"",
-    "lint": "node -e \"console.log('lint not implemented yet')\"",
-    "typecheck": "node -e \"console.log('typecheck not implemented yet')\"",
-    "test": "node -e \"console.log('tests not implemented yet')\""
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc --build",
+    "lint": "eslint src/",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.13.7",
+    "@hono/zod-openapi": "^0.16.4",
+    "dotenv": "^16.4.5",
+    "hono": "^4.6.10",
+    "ioredis": "^5.4.1",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "tsx": "^4.19.3",
+    "vitest": "^3.2.4"
   }
 }
