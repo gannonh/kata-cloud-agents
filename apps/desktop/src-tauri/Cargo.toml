@@ -11,6 +11,7 @@ tauri-build = { version = "2", features = [] }
 
 [dependencies]
 tauri = { version = "2", features = [] }
+tauri-plugin-fs = "2"
 
 [features]
 custom-protocol = ["tauri/custom-protocol"]
