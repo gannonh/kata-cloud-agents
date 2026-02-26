@@ -26,8 +26,7 @@ describe('UserSchema', () => {
   });
 
   it('rejects missing id', () => {
-    const { id: _, ...rest } = valid;
-    expect(() => UserSchema.parse(rest)).toThrow();
+    expect(() => UserSchema.parse({ email: valid.email, name: valid.name, createdAt: valid.createdAt })).toThrow();
   });
 });
 
@@ -89,7 +88,9 @@ describe('ApiKeySchema', () => {
   });
 
   it('rejects missing keyHash', () => {
-    const { keyHash: _, ...rest } = valid;
-    expect(() => ApiKeySchema.parse(rest)).toThrow();
+    expect(() => ApiKeySchema.parse({
+      id: valid.id, teamId: valid.teamId, name: valid.name,
+      prefix: valid.prefix, createdBy: valid.createdBy, createdAt: valid.createdAt,
+    })).toThrow();
   });
 });
