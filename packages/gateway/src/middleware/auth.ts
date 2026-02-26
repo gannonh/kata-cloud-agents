@@ -7,12 +7,17 @@ export function authMiddleware(config: GatewayConfig, deps: GatewayDeps): Middle
   return async (c, next) => {
     const apiKey = c.req.header('x-api-key');
     if (apiKey) {
-      const keyPrincipal = await deps.apiKeyAuth.validateApiKey(apiKey);
-      if (!keyPrincipal) {
-        return jsonError(c, 401, 'INVALID_API_KEY', 'Invalid API key');
+      try {
+        const keyPrincipal = await deps.apiKeyAuth.validateApiKey(apiKey);
+        if (!keyPrincipal) {
+          return jsonError(c, 401, 'INVALID_API_KEY', 'Invalid API key');
+        }
+        c.set('principal', { type: 'api_key', ...keyPrincipal });
+        return next();
+      } catch (err) {
+        deps.logger.error({ err }, 'api key auth error');
+        return jsonError(c, 503, 'AUTH_SERVICE_UNAVAILABLE', 'Authentication service unavailable');
       }
-      c.set('principal', { type: 'api_key', ...keyPrincipal });
-      return next();
     }
 
     const sessionId = getCookie(c, config.sessionCookieName);
@@ -25,13 +30,18 @@ export function authMiddleware(config: GatewayConfig, deps: GatewayDeps): Middle
       if (!session) {
         return jsonError(c, 401, 'INVALID_SESSION', 'Invalid session');
       }
+      const expiresAtMs = Date.parse(session.expiresAt);
+      if (!Number.isFinite(expiresAtMs) || expiresAtMs <= deps.now().getTime()) {
+        return jsonError(c, 401, 'INVALID_SESSION', 'Invalid session');
+      }
       c.set('principal', {
         type: 'session_user',
         teamId: session.teamId,
         userId: session.userId,
       });
       return next();
-    } catch {
+    } catch (err) {
+      deps.logger.error({ err, sessionId }, 'session auth error');
       return jsonError(c, 503, 'AUTH_SERVICE_UNAVAILABLE', 'Authentication service unavailable');
     }
   };

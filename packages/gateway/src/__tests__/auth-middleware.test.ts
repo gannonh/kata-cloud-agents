@@ -50,6 +50,59 @@ describe('auth middleware', () => {
     expect(res.status).toBe(200);
   });
 
+  it('accepts valid session cookie', async () => {
+    const deps = makeDeps({
+      sessionStore: {
+        getSession: vi.fn(async () => ({
+          userId: 'user-1',
+          teamId: 'team-1',
+          expiresAt: '2026-02-27T00:00:00.000Z',
+        })),
+      },
+    });
+    const app = createGatewayApp(makeConfig(), deps);
+    const res = await app.request('/api/teams', {
+      headers: { cookie: 'kata.sid=sid-123' },
+    });
+    expect(res.status).toBe(200);
+  });
+
+  it('rejects expired session cookie', async () => {
+    const deps = makeDeps({
+      sessionStore: {
+        getSession: vi.fn(async () => ({
+          userId: 'user-1',
+          teamId: 'team-1',
+          expiresAt: '2026-02-25T00:00:00.000Z',
+        })),
+      },
+    });
+    const app = createGatewayApp(makeConfig(), deps);
+    const res = await app.request('/api/teams', {
+      headers: { cookie: 'kata.sid=sid-123' },
+    });
+    expect(res.status).toBe(401);
+    const body = await res.json();
+    expect(body.error.code).toBe('INVALID_SESSION');
+  });
+
+  it('fails closed when API key adapter throws', async () => {
+    const deps = makeDeps({
+      apiKeyAuth: {
+        validateApiKey: vi.fn(async () => {
+          throw new Error('auth backend down');
+        }),
+      },
+    });
+    const app = createGatewayApp(makeConfig(), deps);
+    const res = await app.request('/api/teams', {
+      headers: { 'x-api-key': 'kat_live_123' },
+    });
+    expect(res.status).toBe(503);
+    const body = await res.json();
+    expect(body.error.code).toBe('AUTH_SERVICE_UNAVAILABLE');
+  });
+
   it('fails closed when session store throws', async () => {
     const deps = makeDeps({
       sessionStore: {

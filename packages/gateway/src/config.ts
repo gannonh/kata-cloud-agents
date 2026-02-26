@@ -2,8 +2,6 @@ import { config as loadEnv } from 'dotenv';
 import { z } from 'zod';
 import type { GatewayConfig } from './types.js';
 
-loadEnv();
-
 const EnvSchema = z.object({
   GATEWAY_PORT: z.coerce.number().int().positive().default(3001),
   GATEWAY_ALLOWED_ORIGINS: z.string().default('http://localhost:1420,http://localhost:5173'),
@@ -15,6 +13,10 @@ const EnvSchema = z.object({
 });
 
 export function loadGatewayConfig(env: NodeJS.ProcessEnv = process.env): GatewayConfig {
+  if (env === process.env) {
+    loadEnv();
+  }
+
   const parsed = EnvSchema.parse(env);
   return {
     port: parsed.GATEWAY_PORT,

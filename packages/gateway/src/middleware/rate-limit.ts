@@ -1,12 +1,31 @@
+import { isIP } from 'node:net';
 import type { MiddlewareHandler } from 'hono';
 import { jsonError } from './error-handler.js';
 
+function normalizeIp(value: string | undefined): string | null {
+  if (!value) {
+    return null;
+  }
+  const trimmed = value.trim();
+  return isIP(trimmed) ? trimmed : null;
+}
+
 export function createRateLimitMiddleware(windowMs: number, maxRequests: number): MiddlewareHandler {
   const buckets = new Map<string, { count: number; resetAt: number }>();
+  const cleanupInterval = setInterval(() => {
+    const now = Date.now();
+    for (const [key, bucket] of buckets.entries()) {
+      if (bucket.resetAt <= now) {
+        buckets.delete(key);
+      }
+    }
+  }, Math.max(windowMs, 1000));
+  cleanupInterval.unref();
 
   return async (c, next) => {
     const now = Date.now();
-    const ip = c.req.header('x-forwarded-for') ?? 'unknown';
+    const forwardedFor = c.req.header('x-forwarded-for')?.split(',')[0];
+    const ip = normalizeIp(c.req.header('x-real-ip')) ?? normalizeIp(forwardedFor) ?? 'unknown';
     const key = `${ip}:${c.req.path}`;
 
     const current = buckets.get(key);

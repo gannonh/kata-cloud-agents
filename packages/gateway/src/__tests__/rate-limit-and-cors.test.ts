@@ -49,6 +49,29 @@ describe('rate limit + cors + logging', () => {
     expect(body.error.code).toBe('RATE_LIMITED');
   });
 
+  it('derives distinct buckets from x-real-ip when x-forwarded-for is missing', async () => {
+    const { app } = makeApp();
+    const clientOneHeaders = {
+      'x-api-key': 'kat_test_1',
+      'x-real-ip': '10.0.0.5',
+    };
+    const clientTwoHeaders = {
+      'x-api-key': 'kat_test_1',
+      'x-real-ip': '10.0.0.6',
+    };
+
+    expect((await app.request('/api/specs', { headers: clientOneHeaders })).status).toBe(200);
+    expect((await app.request('/api/specs', { headers: clientOneHeaders })).status).toBe(200);
+    expect((await app.request('/api/specs', { headers: clientTwoHeaders })).status).toBe(200);
+    expect((await app.request('/api/specs', { headers: clientTwoHeaders })).status).toBe(200);
+
+    const blockedClientOne = await app.request('/api/specs', { headers: clientOneHeaders });
+    const allowedClientTwo = await app.request('/api/specs', { headers: clientTwoHeaders });
+
+    expect(blockedClientOne.status).toBe(429);
+    expect(allowedClientTwo.status).toBe(429);
+  });
+
   it('sets allow-origin header for allowed origins', async () => {
     const { app } = makeApp();
     const res = await app.request('/health', {
