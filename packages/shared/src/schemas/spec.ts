@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const SpecStatusSchema = z.enum(['draft', 'active', 'paused', 'completed', 'archived']);
+export const SpecStatusSchema = z.enum(['draft', 'approved', 'in_progress', 'verifying', 'done', 'failed']);
 export type SpecStatus = z.infer<typeof SpecStatusSchema>;
 
 export const SpecMetaSchema = z
