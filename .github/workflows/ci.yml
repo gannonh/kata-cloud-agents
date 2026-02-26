@@ -91,8 +91,10 @@ jobs:
 
       - name: Ensure matrix Rust target is installed
         if: matrix.rust-targets != ''
+        working-directory: apps/desktop/src-tauri
         run: |
-          rustup target add ${{ matrix.rust-targets }} --toolchain stable
+          rustup show active-toolchain
+          rustup target add ${{ matrix.rust-targets }}
           rustup target list --installed
 
       - name: Rust cache
