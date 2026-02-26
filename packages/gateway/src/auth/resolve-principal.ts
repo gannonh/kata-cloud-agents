@@ -1,5 +1,9 @@
 import type { AuthResolution, GatewayDeps } from '../types.js';
 
+/**
+ * Resolve request credentials to a principal.
+ * API keys take precedence over sessions when both are present.
+ */
 export async function resolvePrincipal(
   credentials: { apiKey: string | null; sessionId: string | null },
   deps: Pick<GatewayDeps, 'apiKeyAuth' | 'sessionStore' | 'logger' | 'now'>,

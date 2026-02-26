@@ -12,7 +12,13 @@ const EnvSchema = z.object({
   WS_HEARTBEAT_INTERVAL_MS: z.coerce.number().int().positive().default(15000),
   WS_HEARTBEAT_TIMEOUT_MS: z.coerce.number().int().positive().default(30000),
   WS_MAX_SUBSCRIPTIONS_PER_CONNECTION: z.coerce.number().int().positive().default(100),
-});
+}).refine(
+  (value) => value.WS_HEARTBEAT_TIMEOUT_MS > value.WS_HEARTBEAT_INTERVAL_MS,
+  {
+    path: ['WS_HEARTBEAT_TIMEOUT_MS'],
+    message: 'WS_HEARTBEAT_TIMEOUT_MS must be greater than WS_HEARTBEAT_INTERVAL_MS',
+  },
+);
 
 export function loadGatewayConfig(env: NodeJS.ProcessEnv = process.env): GatewayConfig {
   if (env === process.env) {

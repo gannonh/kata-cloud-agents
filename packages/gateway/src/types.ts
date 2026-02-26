@@ -33,8 +33,14 @@ export type AuthResolution =
   | { ok: true; principal: AuthPrincipal }
   | {
       ok: false;
-      status: 401 | 503;
-      code: 'INVALID_API_KEY' | 'AUTH_REQUIRED' | 'INVALID_SESSION' | 'SESSION_EXPIRED' | 'AUTH_SERVICE_UNAVAILABLE';
+      status: 401;
+      code: 'INVALID_API_KEY' | 'AUTH_REQUIRED' | 'INVALID_SESSION' | 'SESSION_EXPIRED';
+      message: string;
+    }
+  | {
+      ok: false;
+      status: 503;
+      code: 'AUTH_SERVICE_UNAVAILABLE';
       message: string;
     };
 

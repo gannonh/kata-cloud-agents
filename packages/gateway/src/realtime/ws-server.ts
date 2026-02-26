@@ -67,23 +67,10 @@ function writeUpgradeRejection(socket: Duplex, status: number, message: string) 
 }
 
 function getApiKey(req: IncomingMessage): string | null {
-  const headerKey = readHeaderValue(req.headers['x-api-key']);
-  if (headerKey) {
-    return headerKey;
-  }
-
-  if (!req.url) {
-    return null;
-  }
-
-  try {
-    const parsed = new URL(req.url, 'http://localhost');
-    return parsed.searchParams.get('apiKey');
-  } catch {
-    return null;
-  }
+  return readHeaderValue(req.headers['x-api-key']);
 }
 
+/** Create the websocket server handling realtime subscriptions and fanout. */
 export function createRealtimeWsServer(input: {
   server: {
     on: (
@@ -95,12 +82,18 @@ export function createRealtimeWsServer(input: {
   config: RealtimeServerConfig;
   deps: RealtimeServerDeps;
 }) {
-  const wss = new WebSocketServer({ noServer: true });
-  const hub = createRealtimeHub(() => input.deps.now().getTime());
+  const wss = new WebSocketServer({ noServer: true, maxPayload: 16 * 1024 });
+  const hub = createRealtimeHub(() => input.deps.now().getTime(), input.deps.logger);
   const channelAccess = input.deps.channelAccess ?? {
     resolveSpecTeamId: async () => null,
     resolveAgentTeamId: async () => null,
   };
+  if (!input.deps.channelAccess) {
+    input.deps.logger.error(
+      {},
+      'channelAccess adapter missing for realtime websocket server; spec/agent channels will be denied',
+    );
+  }
 
   function publish(message: OutboundMessage): number {
     const parsed = OutboundMessageSchema.parse(message);
@@ -116,6 +109,7 @@ export function createRealtimeWsServer(input: {
       timeoutMs: input.config.wsHeartbeatTimeoutMs,
       closeCode: 4001,
       closeReason: 'heartbeat timeout',
+      logger: input.deps.logger,
     });
   }, input.config.wsHeartbeatIntervalMs);
   heartbeatTimer.unref();
@@ -124,7 +118,9 @@ export function createRealtimeWsServer(input: {
     let pathname: string;
     try {
       pathname = new URL(req.url ?? '', 'http://localhost').pathname;
-    } catch {
+    } catch (err) {
+      input.deps.logger.error({ err, url: req.url ?? null }, 'invalid websocket upgrade URL');
+      writeUpgradeRejection(socket, 400, 'Bad Request');
       return;
     }
 
@@ -163,63 +159,91 @@ export function createRealtimeWsServer(input: {
       });
 
       ws.on('message', async (raw) => {
-        let parsedRaw: unknown;
         try {
-          parsedRaw = JSON.parse(raw.toString());
-        } catch {
-          ws.send(jsonEnvelope('error', { code: 'INVALID_MESSAGE', message: 'Message must be valid JSON' }, input.deps.now));
-          return;
-        }
-
-        const commandResult = InboundCommandSchema.safeParse(parsedRaw);
-        if (!commandResult.success) {
-          ws.send(jsonEnvelope('error', { code: 'INVALID_COMMAND', message: 'Unsupported command shape' }, input.deps.now));
-          return;
-        }
-        const command = commandResult.data;
-
-        if (command.type === 'ping') {
-          hub.markPong(connectionId);
-          ws.send(jsonEnvelope('pong', { ok: true }, input.deps.now));
-          return;
-        }
-
-        if (command.type === 'subscribe') {
-          const count = hub.listStates().find((state) => state.connection.id === connectionId)?.subscriptions.size ?? 0;
-          if (count >= input.config.wsMaxSubscriptionsPerConnection) {
+          let parsedRaw: unknown;
+          try {
+            parsedRaw = JSON.parse(raw.toString());
+          } catch {
             ws.send(
-              jsonEnvelope('error', {
-                code: 'MAX_SUBSCRIPTIONS_REACHED',
-                message: 'Connection has reached max subscriptions',
-              }, input.deps.now),
+              jsonEnvelope('error', { code: 'INVALID_MESSAGE', message: 'Message must be valid JSON' }, input.deps.now),
             );
             return;
           }
 
-          const authorization = await authorizeChannel(command.channel, authResult.principal, channelAccess);
-          if (!authorization.ok) {
-            ws.send(jsonEnvelope('error', { code: 'CHANNEL_FORBIDDEN', message: 'Channel access denied' }, input.deps.now));
+          const commandResult = InboundCommandSchema.safeParse(parsedRaw);
+          if (!commandResult.success) {
+            ws.send(jsonEnvelope('error', { code: 'INVALID_COMMAND', message: 'Unsupported command shape' }, input.deps.now));
             return;
           }
-          hub.subscribe(connectionId, command.channel);
-          ws.send(jsonEnvelope('subscribed', { channel: command.channel }, input.deps.now, command.channel));
-          return;
-        }
+          const command = commandResult.data;
 
-        if (command.type === 'unsubscribe') {
-          const removed = hub.unsubscribe(connectionId, command.channel);
-          ws.send(
-            jsonEnvelope(
-              'unsubscribed',
-              { channel: command.channel, removed },
-              input.deps.now,
-              command.channel,
-            ),
-          );
-          return;
-        }
+          if (command.type === 'ping') {
+            hub.markPong(connectionId);
+            ws.send(jsonEnvelope('pong', { ok: true }, input.deps.now));
+            return;
+          }
 
-        ws.send(jsonEnvelope('error', { code: 'INVALID_COMMAND', message: 'Unsupported command type' }, input.deps.now));
+          if (command.type === 'subscribe') {
+            const count = hub.subscriptionCount(connectionId);
+            if (count >= input.config.wsMaxSubscriptionsPerConnection) {
+              ws.send(
+                jsonEnvelope(
+                  'error',
+                  {
+                    code: 'MAX_SUBSCRIPTIONS_REACHED',
+                    message: 'Connection has reached max subscriptions',
+                  },
+                  input.deps.now,
+                ),
+              );
+              return;
+            }
+
+            const authorization = await authorizeChannel(command.channel, authResult.principal, channelAccess);
+            if (!authorization.ok) {
+              if (authorization.reason === 'UNAVAILABLE') {
+                ws.send(
+                  jsonEnvelope(
+                    'error',
+                    {
+                      code: 'CHANNEL_UNAVAILABLE',
+                      message: 'Channel authorization service unavailable',
+                    },
+                    input.deps.now,
+                  ),
+                );
+                return;
+              }
+              ws.send(jsonEnvelope('error', { code: 'CHANNEL_FORBIDDEN', message: 'Channel access denied' }, input.deps.now));
+              return;
+            }
+            hub.subscribe(connectionId, command.channel);
+            ws.send(jsonEnvelope('subscribed', { channel: command.channel }, input.deps.now, command.channel));
+            return;
+          }
+
+          if (command.type === 'unsubscribe') {
+            const removed = hub.unsubscribe(connectionId, command.channel);
+            ws.send(
+              jsonEnvelope(
+                'unsubscribed',
+                { channel: command.channel, removed },
+                input.deps.now,
+                command.channel,
+              ),
+            );
+            return;
+          }
+
+          ws.send(jsonEnvelope('error', { code: 'INVALID_COMMAND', message: 'Unsupported command type' }, input.deps.now));
+        } catch (err) {
+          input.deps.logger.error({ err, connectionId }, 'websocket message handling failed');
+          try {
+            ws.send(jsonEnvelope('error', { code: 'INTERNAL_ERROR', message: 'Internal server error' }, input.deps.now));
+          } catch (sendErr) {
+            input.deps.logger.error({ err: sendErr, connectionId }, 'failed to send websocket error frame');
+          }
+        }
       });
     });
   });

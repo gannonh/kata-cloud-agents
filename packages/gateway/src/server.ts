@@ -10,10 +10,7 @@ const logger = {
   error: (meta: Record<string, unknown>, message: string) => console.error(message, meta),
 };
 
-// Stub adapters reject all credentials — wire real adapters before production use
-logger.error({}, 'gateway started with stub auth adapters; all authenticated requests will be rejected');
-
-const app = createGatewayApp(config, {
+const stubAuthDeps = {
   logger,
   apiKeyAuth: {
     validateApiKey: async () => null,
@@ -22,6 +19,18 @@ const app = createGatewayApp(config, {
     getSession: async () => null,
   },
   now: () => new Date(),
+};
+
+const stubChannelAccess = {
+  resolveSpecTeamId: async () => null,
+  resolveAgentTeamId: async () => null,
+};
+
+// Stub adapters reject all credentials — wire real adapters before production use
+logger.error({}, 'gateway started with stub auth adapters; all authenticated requests will be rejected');
+
+const app = createGatewayApp(config, {
+  ...stubAuthDeps,
 });
 
 const server = serve({ fetch: app.fetch, port: config.port });
@@ -30,18 +39,8 @@ const realtimeWs = createRealtimeWsServer({
   path: '/ws',
   config,
   deps: {
-    logger,
-    apiKeyAuth: {
-      validateApiKey: async () => null,
-    },
-    sessionStore: {
-      getSession: async () => null,
-    },
-    channelAccess: {
-      resolveSpecTeamId: async () => null,
-      resolveAgentTeamId: async () => null,
-    },
-    now: () => new Date(),
+    ...stubAuthDeps,
+    channelAccess: stubChannelAccess,
   },
 });
 

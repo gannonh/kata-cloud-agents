@@ -99,4 +99,18 @@ describe('resolvePrincipal', () => {
       message: 'Authentication service unavailable',
     });
   });
+
+  it('returns auth service unavailable when session store throws', async () => {
+    const deps = makeDeps();
+    deps.sessionStore.getSession = vi.fn(async () => {
+      throw new Error('session backend down');
+    });
+    const result = await resolvePrincipal({ apiKey: null, sessionId: 'sid_ok' }, deps);
+    expect(result).toEqual({
+      ok: false,
+      status: 503,
+      code: 'AUTH_SERVICE_UNAVAILABLE',
+      message: 'Authentication service unavailable',
+    });
+  });
 });

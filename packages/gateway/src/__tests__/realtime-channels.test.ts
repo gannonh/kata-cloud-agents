@@ -14,7 +14,10 @@ describe('channel authorization', () => {
   });
 
   it('rejects foreign team channel', async () => {
-    await expect(authorizeChannel('team:team-2', principal, access)).resolves.toEqual({ ok: false });
+    await expect(authorizeChannel('team:team-2', principal, access)).resolves.toEqual({
+      ok: false,
+      reason: 'FORBIDDEN',
+    });
   });
 
   it('allows spec channel in same team', async () => {
@@ -26,7 +29,27 @@ describe('channel authorization', () => {
   });
 
   it('rejects invalid channel format', async () => {
-    await expect(authorizeChannel('bogus', principal, access)).resolves.toEqual({ ok: false });
-    await expect(authorizeChannel('spec:spec-1:extra', principal, access)).resolves.toEqual({ ok: false });
+    await expect(authorizeChannel('bogus', principal, access)).resolves.toEqual({
+      ok: false,
+      reason: 'INVALID_CHANNEL',
+    });
+    await expect(authorizeChannel('spec:spec-1:extra', principal, access)).resolves.toEqual({
+      ok: false,
+      reason: 'INVALID_CHANNEL',
+    });
+  });
+
+  it('marks resolver failures as unavailable', async () => {
+    await expect(
+      authorizeChannel('spec:spec-1', principal, {
+        resolveSpecTeamId: async () => {
+          throw new Error('db unavailable');
+        },
+        resolveAgentTeamId: async () => null,
+      }),
+    ).resolves.toEqual({
+      ok: false,
+      reason: 'UNAVAILABLE',
+    });
   });
 });

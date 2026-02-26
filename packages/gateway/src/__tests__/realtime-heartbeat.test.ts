@@ -37,6 +37,7 @@ describe('realtime heartbeat', () => {
 
   it('continues sweep if a ping throws', () => {
     const hub = createRealtimeHub(() => 1_000);
+    const logger = { error: vi.fn() };
     const pingA = vi.fn(() => {
       throw new Error('socket error');
     });
@@ -49,15 +50,18 @@ describe('realtime heartbeat', () => {
       timeoutMs: 30_000,
       closeCode: 4001,
       closeReason: 'heartbeat timeout',
+      logger,
     });
 
     expect(pingA).toHaveBeenCalledTimes(1);
     expect(pingB).toHaveBeenCalledTimes(1);
     expect(hub.listStates().map((state) => state.connection.id)).toEqual(['b']);
+    expect(logger.error).toHaveBeenCalledTimes(1);
   });
 
   it('removes stale connections even if close throws', () => {
     const hub = createRealtimeHub(() => 1_000);
+    const logger = { error: vi.fn() };
     const close = vi.fn(() => {
       throw new Error('close failed');
     });
@@ -68,9 +72,11 @@ describe('realtime heartbeat', () => {
       timeoutMs: 30_000,
       closeCode: 4001,
       closeReason: 'heartbeat timeout',
+      logger,
     });
 
     expect(close).toHaveBeenCalledWith(4001, 'heartbeat timeout');
     expect(hub.listStates()).toHaveLength(0);
+    expect(logger.error).toHaveBeenCalledTimes(1);
   });
 });

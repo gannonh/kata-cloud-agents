@@ -5,6 +5,10 @@ export type RealtimeChannel =
   | { kind: 'spec'; id: string }
   | { kind: 'agent'; id: string };
 
+export type ChannelAuthorizationResult =
+  | { ok: true }
+  | { ok: false; reason: 'FORBIDDEN' | 'INVALID_CHANNEL' | 'UNAVAILABLE' };
+
 export function parseChannel(value: string): RealtimeChannel | null {
   const parts = value.split(':');
   if (parts.length !== 2) {
@@ -23,18 +27,25 @@ export function parseChannel(value: string): RealtimeChannel | null {
   return null;
 }
 
+/**
+ * Authorize a channel subscription against the authenticated principal.
+ *
+ * team:{teamId}: direct team equality check
+ * spec:{specId}: resolved via access adapter, then matched to principal team
+ * agent:{agentId}: resolved via access adapter, then matched to principal team
+ */
 export async function authorizeChannel(
   rawChannel: string,
   principal: AuthPrincipal,
   access: ChannelAccessAdapter,
-): Promise<{ ok: boolean }> {
+): Promise<ChannelAuthorizationResult> {
   const parsed = parseChannel(rawChannel);
   if (!parsed) {
-    return { ok: false };
+    return { ok: false, reason: 'INVALID_CHANNEL' };
   }
 
   if (parsed.kind === 'team') {
-    return { ok: parsed.id === principal.teamId };
+    return parsed.id === principal.teamId ? { ok: true } : { ok: false, reason: 'FORBIDDEN' };
   }
 
   try {
@@ -42,8 +53,8 @@ export async function authorizeChannel(
       parsed.kind === 'spec'
         ? await access.resolveSpecTeamId(parsed.id)
         : await access.resolveAgentTeamId(parsed.id);
-    return { ok: Boolean(teamId && teamId === principal.teamId) };
+    return teamId && teamId === principal.teamId ? { ok: true } : { ok: false, reason: 'FORBIDDEN' };
   } catch {
-    return { ok: false };
+    return { ok: false, reason: 'UNAVAILABLE' };
   }
 }

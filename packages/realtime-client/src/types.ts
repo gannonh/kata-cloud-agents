@@ -6,18 +6,17 @@ export type OutboundCommand =
   | { type: 'ping' };
 
 export type SocketLike = {
-  readyState: number;
+  readyState: 0 | 1 | 2 | 3;
   send: (payload: string) => void;
   close: (code?: number, reason?: string) => void;
   onopen: (() => void) | null;
   onmessage: ((event: { data: string }) => void) | null;
   onclose: (() => void) | null;
-  onerror: (() => void) | null;
+  onerror: ((event: unknown) => void) | null;
 };
 
 export type RealtimeClientOptions = {
   url: string;
-  apiKey?: string;
   createSocket?: (url: string) => SocketLike;
   random?: () => number;
   backoff?: {

@@ -5,6 +5,10 @@ export type HubConnection = {
   ping: () => void;
 };
 
+type HubLogger = {
+  error: (meta: Record<string, unknown>, message: string) => void;
+};
+
 type HubState = {
   connection: HubConnection;
   subscriptions: Set<string>;
@@ -13,7 +17,7 @@ type HubState = {
 
 export type RealtimeHub = ReturnType<typeof createRealtimeHub>;
 
-export function createRealtimeHub(now: () => number = () => Date.now()) {
+export function createRealtimeHub(now: () => number = () => Date.now(), logger?: HubLogger) {
   const byId = new Map<string, HubState>();
   const channelMembers = new Map<string, Set<string>>();
 
@@ -68,13 +72,15 @@ export function createRealtimeHub(now: () => number = () => Date.now()) {
     const members = channelMembers.get(channel);
     if (!members || members.size === 0) return 0;
     let sent = 0;
+    // Iterate over a copied set so we can safely remove broken connections during fanout.
     for (const connectionId of [...members]) {
       const state = byId.get(connectionId);
       if (!state) continue;
       try {
         state.connection.send(payload);
         sent += 1;
-      } catch {
+      } catch (err) {
+        logger?.error({ err, connectionId, channel }, 'failed to fanout realtime message');
         removeConnection(connectionId);
       }
     }
@@ -88,7 +94,15 @@ export function createRealtimeHub(now: () => number = () => Date.now()) {
   }
 
   function listStates() {
-    return [...byId.values()];
+    return [...byId.values()].map((state) => ({
+      connection: state.connection,
+      subscriptions: new Set(state.subscriptions),
+      lastPongAt: state.lastPongAt,
+    }));
+  }
+
+  function subscriptionCount(connectionId: string): number {
+    return byId.get(connectionId)?.subscriptions.size ?? 0;
   }
 
   return {
@@ -99,5 +113,6 @@ export function createRealtimeHub(now: () => number = () => Date.now()) {
     publish,
     markPong,
     listStates,
+    subscriptionCount,
   };
 }
