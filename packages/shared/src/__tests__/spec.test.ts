@@ -44,6 +44,18 @@ describe('SpecBlockerSchema', () => {
     const b = { id: uuid, description: 'Done', status: 'resolved' as const, reportedAt: now, resolvedAt: now };
     expect(SpecBlockerSchema.parse(b)).toEqual(b);
   });
+
+  it('rejects resolved blocker without resolvedAt', () => {
+    expect(() =>
+      SpecBlockerSchema.parse({ id: uuid, description: 'Done', status: 'resolved', reportedAt: now }),
+    ).toThrow();
+  });
+
+  it('rejects open blocker with resolvedAt', () => {
+    expect(() =>
+      SpecBlockerSchema.parse({ id: uuid, description: 'X', status: 'open', reportedAt: now, resolvedAt: now }),
+    ).toThrow();
+  });
 });
 
 describe('SpecBlockerStatusSchema', () => {
@@ -91,5 +103,44 @@ describe('SpecSchema', () => {
       verification: { criteria: ['works'], testPlan: 'run login e2e' },
     };
     expect(SpecSchema.parse(spec).verification.testPlan).toBe('run login e2e');
+  });
+
+  it('rejects empty intent', () => {
+    expect(() => SpecSchema.parse({ ...validSpec, intent: '' })).toThrow();
+  });
+
+  it('rejects empty constraint item', () => {
+    expect(() => SpecSchema.parse({ ...validSpec, constraints: ['valid', ''] })).toThrow();
+  });
+
+  it('rejects empty verification criteria item', () => {
+    expect(() =>
+      SpecSchema.parse({ ...validSpec, verification: { criteria: [''] } }),
+    ).toThrow();
+  });
+
+  it('rejects empty rationale in decision', () => {
+    const d = { id: uuid, description: 'Use Zod', decidedBy: 'arch', decidedAt: now, rationale: '' };
+    expect(() => SpecDecisionSchema.parse(d)).toThrow();
+  });
+
+  it('rejects updatedAt before createdAt in meta', () => {
+    expect(() =>
+      SpecSchema.parse({
+        ...validSpec,
+        meta: { version: 1, createdAt: '2026-02-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' },
+      }),
+    ).toThrow();
+  });
+
+  it('parses spec with populated decisions and blockers', () => {
+    const spec = {
+      ...validSpec,
+      decisions: [{ id: uuid, description: 'Use Zod', decidedBy: 'arch', decidedAt: now }],
+      blockers: [{ id: uuid, description: 'Pending API', status: 'open' as const, reportedAt: now }],
+    };
+    const parsed = SpecSchema.parse(spec);
+    expect(parsed.decisions).toHaveLength(1);
+    expect(parsed.blockers).toHaveLength(1);
   });
 });

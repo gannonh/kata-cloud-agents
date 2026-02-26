@@ -38,4 +38,41 @@ describe('AgentRunSchema', () => {
   it('rejects invalid status', () => {
     expect(() => AgentRunSchema.parse({ ...valid, status: 'paused' })).toThrow();
   });
+
+  it('rejects running without startedAt', () => {
+    expect(() => AgentRunSchema.parse({ ...valid, status: 'running' })).toThrow();
+  });
+
+  it('rejects completed without timestamps', () => {
+    expect(() => AgentRunSchema.parse({ ...valid, status: 'completed' })).toThrow();
+  });
+
+  it('rejects completed with startedAt but no completedAt', () => {
+    expect(() =>
+      AgentRunSchema.parse({ ...valid, status: 'completed', startedAt: now }),
+    ).toThrow();
+  });
+
+  it('rejects failed without timestamps', () => {
+    expect(() => AgentRunSchema.parse({ ...valid, status: 'failed' })).toThrow();
+  });
+
+  it('accepts cancelled without timestamps', () => {
+    expect(AgentRunSchema.parse({ ...valid, status: 'cancelled' }).status).toBe('cancelled');
+  });
+
+  it('accepts cancelled with startedAt only', () => {
+    const run = { ...valid, status: 'cancelled' as const, startedAt: now };
+    expect(AgentRunSchema.parse(run).status).toBe('cancelled');
+  });
+
+  it('rejects empty model', () => {
+    expect(() => AgentRunSchema.parse({ ...valid, model: '' })).toThrow();
+  });
+
+  it('rejects malformed datetime in startedAt', () => {
+    expect(() =>
+      AgentRunSchema.parse({ ...valid, status: 'running', startedAt: 'not-a-date' }),
+    ).toThrow();
+  });
 });

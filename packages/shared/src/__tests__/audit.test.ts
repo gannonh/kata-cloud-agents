@@ -30,4 +30,12 @@ describe('AuditEntrySchema', () => {
   it('rejects empty action', () => {
     expect(() => AuditEntrySchema.parse({ ...valid, action: '' })).toThrow();
   });
+
+  it('rejects malformed timestamp', () => {
+    expect(() => AuditEntrySchema.parse({ ...valid, timestamp: 'not-a-date' })).toThrow();
+  });
+
+  it('rejects non-uuid id', () => {
+    expect(() => AuditEntrySchema.parse({ ...valid, id: 'not-a-uuid' })).toThrow();
+  });
 });

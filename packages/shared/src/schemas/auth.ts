@@ -14,7 +14,7 @@ export type User = z.infer<typeof UserSchema>;
 export const TeamSchema = z.object({
   id: z.string().uuid(),
   name: z.string().min(1),
-  slug: z.string().min(1),
+  slug: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
   createdAt: z.string().datetime(),
 });
 export type Team = z.infer<typeof TeamSchema>;

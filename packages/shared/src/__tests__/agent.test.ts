@@ -38,6 +38,42 @@ describe('ModelConfigSchema', () => {
     const c = { provider: 'anthropic', model: 'claude-sonnet-4-20250514', temperature: 0.7, maxTokens: 4096 };
     expect(ModelConfigSchema.parse(c)).toEqual(c);
   });
+
+  it('accepts temperature at boundaries', () => {
+    const base = { provider: 'anthropic', model: 'x' };
+    expect(ModelConfigSchema.parse({ ...base, temperature: 0 }).temperature).toBe(0);
+    expect(ModelConfigSchema.parse({ ...base, temperature: 2 }).temperature).toBe(2);
+  });
+
+  it('rejects temperature below 0', () => {
+    expect(() =>
+      ModelConfigSchema.parse({ provider: 'anthropic', model: 'x', temperature: -0.1 }),
+    ).toThrow();
+  });
+
+  it('rejects temperature above 2', () => {
+    expect(() =>
+      ModelConfigSchema.parse({ provider: 'anthropic', model: 'x', temperature: 2.1 }),
+    ).toThrow();
+  });
+
+  it('rejects zero maxTokens', () => {
+    expect(() =>
+      ModelConfigSchema.parse({ provider: 'anthropic', model: 'x', maxTokens: 0 }),
+    ).toThrow();
+  });
+
+  it('rejects fractional maxTokens', () => {
+    expect(() =>
+      ModelConfigSchema.parse({ provider: 'anthropic', model: 'x', maxTokens: 1024.5 }),
+    ).toThrow();
+  });
+
+  it('rejects negative maxTokens', () => {
+    expect(() =>
+      ModelConfigSchema.parse({ provider: 'anthropic', model: 'x', maxTokens: -1 }),
+    ).toThrow();
+  });
 });
 
 describe('AgentSchema', () => {

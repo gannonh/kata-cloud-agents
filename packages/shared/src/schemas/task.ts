@@ -10,6 +10,6 @@ export const TaskSchema = z.object({
   title: z.string().min(1),
   status: TaskStatusSchema,
   dependsOn: z.array(z.string().uuid()),
-  result: z.unknown().optional(),
+  result: z.record(z.string(), z.unknown()).optional(),
 });
 export type Task = z.infer<typeof TaskSchema>;

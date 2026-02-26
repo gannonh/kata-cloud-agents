@@ -40,6 +40,18 @@ describe('TeamSchema', () => {
   it('rejects empty slug', () => {
     expect(() => TeamSchema.parse({ ...valid, slug: '' })).toThrow();
   });
+
+  it('rejects slug with uppercase', () => {
+    expect(() => TeamSchema.parse({ ...valid, slug: 'Kata' })).toThrow();
+  });
+
+  it('rejects slug with spaces', () => {
+    expect(() => TeamSchema.parse({ ...valid, slug: 'my team' })).toThrow();
+  });
+
+  it('accepts hyphenated slug', () => {
+    expect(TeamSchema.parse({ ...valid, slug: 'my-team' }).slug).toBe('my-team');
+  });
 });
 
 describe('TeamMemberSchema', () => {

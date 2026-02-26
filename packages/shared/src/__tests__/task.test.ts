@@ -42,4 +42,12 @@ describe('TaskSchema', () => {
   it('rejects empty title', () => {
     expect(() => TaskSchema.parse({ ...valid, title: '' })).toThrow();
   });
+
+  it('rejects non-object result', () => {
+    expect(() => TaskSchema.parse({ ...valid, result: 'string-value' })).toThrow();
+  });
+
+  it('rejects array result', () => {
+    expect(() => TaskSchema.parse({ ...valid, result: [1, 2, 3] })).toThrow();
+  });
 });
