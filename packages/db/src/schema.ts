@@ -53,7 +53,7 @@ export const specs = pgTable(
     status: specStatusEnum('status').notNull().default('draft'),
     createdBy: uuid('created_by').notNull().references(() => users.id, { onDelete: 'restrict' }),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().$onUpdateFn(() => sql`now()`).notNull(),
   },
   (table) => [index('specs_team_id_idx').on(table.teamId)],
 );
@@ -150,9 +150,97 @@ export const apiKeys = pgTable(
   ],
 );
 
+export const usersRelations = relations(users, ({ many }) => ({
+  teamMemberships: many(teamMembers),
+  createdSpecs: many(specs),
+  createdApiKeys: many(apiKeys),
+}));
+
 export const teamsRelations = relations(teams, ({ many }) => ({
   members: many(teamMembers),
   specs: many(specs),
   auditEvents: many(auditLog),
   apiKeys: many(apiKeys),
+}));
+
+export const teamMembersRelations = relations(teamMembers, ({ one }) => ({
+  user: one(users, {
+    fields: [teamMembers.userId],
+    references: [users.id],
+  }),
+  team: one(teams, {
+    fields: [teamMembers.teamId],
+    references: [teams.id],
+  }),
+}));
+
+export const specsRelations = relations(specs, ({ one, many }) => ({
+  team: one(teams, {
+    fields: [specs.teamId],
+    references: [teams.id],
+  }),
+  creator: one(users, {
+    fields: [specs.createdBy],
+    references: [users.id],
+  }),
+  versions: many(specVersions),
+  agentRuns: many(agentRuns),
+  tasks: many(tasks),
+}));
+
+export const specVersionsRelations = relations(specVersions, ({ one }) => ({
+  spec: one(specs, {
+    fields: [specVersions.specId],
+    references: [specs.id],
+  }),
+}));
+
+export const agentRunsRelations = relations(agentRuns, ({ one, many }) => ({
+  spec: one(specs, {
+    fields: [agentRuns.specId],
+    references: [specs.id],
+  }),
+  tasks: many(tasks),
+  artifacts: many(artifacts),
+  auditEvents: many(auditLog),
+}));
+
+export const tasksRelations = relations(tasks, ({ one }) => ({
+  spec: one(specs, {
+    fields: [tasks.specId],
+    references: [specs.id],
+  }),
+  agentRun: one(agentRuns, {
+    fields: [tasks.agentRunId],
+    references: [agentRuns.id],
+  }),
+}));
+
+export const artifactsRelations = relations(artifacts, ({ one }) => ({
+  agentRun: one(agentRuns, {
+    fields: [artifacts.agentRunId],
+    references: [agentRuns.id],
+  }),
+}));
+
+export const auditLogRelations = relations(auditLog, ({ one }) => ({
+  team: one(teams, {
+    fields: [auditLog.teamId],
+    references: [teams.id],
+  }),
+  agentRun: one(agentRuns, {
+    fields: [auditLog.agentRunId],
+    references: [agentRuns.id],
+  }),
+}));
+
+export const apiKeysRelations = relations(apiKeys, ({ one }) => ({
+  team: one(teams, {
+    fields: [apiKeys.teamId],
+    references: [teams.id],
+  }),
+  creator: one(users, {
+    fields: [apiKeys.createdBy],
+    references: [users.id],
+  }),
 }));

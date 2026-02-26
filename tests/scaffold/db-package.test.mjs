@@ -13,6 +13,8 @@ assert.ok(pkg.scripts['db:migrate'], 'db:migrate script missing');
 assert.ok(pkg.dependencies['drizzle-orm'], 'drizzle-orm dependency missing');
 assert.ok(pkg.dependencies['pg'], 'pg dependency missing');
 assert.ok(pkg.devDependencies['drizzle-kit'], 'drizzle-kit devDependency missing');
+assert.ok(pkg.exports['./schema'], 'schema export missing');
+assert.ok(pkg.exports['./client'], 'client export missing');
 
 assert.ok(fs.existsSync('packages/db/tsconfig.json'), 'packages/db/tsconfig.json missing');
 assert.ok(fs.existsSync('packages/db/vitest.config.ts'), 'packages/db/vitest.config.ts missing');

@@ -39,3 +39,21 @@ describe('table exports', () => {
     expect(apiKeys).toBeDefined();
   });
 });
+
+describe('root module exports', () => {
+  it('keeps @kata/db side-effect free', async () => {
+    const previousDatabaseUrl = process.env.DATABASE_URL;
+
+    delete process.env.DATABASE_URL;
+    const rootModule = await import('../index.js');
+
+    expect(rootModule.teams).toBeDefined();
+    expect(rootModule.db).toBeUndefined();
+
+    if (previousDatabaseUrl) {
+      process.env.DATABASE_URL = previousDatabaseUrl;
+    } else {
+      delete process.env.DATABASE_URL;
+    }
+  });
+});
