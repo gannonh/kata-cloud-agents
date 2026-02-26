@@ -71,6 +71,9 @@ importers:
 
   apps/desktop:
     dependencies:
+      '@kata/realtime-client':
+        specifier: workspace:*
+        version: link:../../packages/realtime-client
       lucide-react:
         specifier: ^0.575.0
         version: 0.575.0(react@18.3.1)
@@ -114,6 +117,9 @@ importers:
 
   apps/mobile:
     dependencies:
+      '@kata/realtime-client':
+        specifier: workspace:*
+        version: link:../../packages/realtime-client
       react:
         specifier: ^18.3.1
         version: 18.3.1
@@ -136,6 +142,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@kata/realtime-client':
+        specifier: workspace:*
+        version: link:../../packages/realtime-client
       '@kata/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -211,6 +220,9 @@ importers:
       ioredis:
         specifier: ^5.4.1
         version: 5.9.3
+      ws:
+        specifier: ^8.19.0
+        version: 8.19.0
       zod:
         specifier: ^3.25.76
         version: 3.25.76
@@ -218,6 +230,9 @@ importers:
       '@types/node':
         specifier: ^22.13.10
         version: 22.19.13
+      '@types/ws':
+        specifier: ^8.18.1
+        version: 8.18.1
       tsx:
         specifier: ^4.19.3
         version: 4.21.0
@@ -228,6 +243,15 @@ importers:
   packages/governance: {}
 
   packages/infra-adapters: {}
+
+  packages/realtime-client:
+    devDependencies:
+      '@types/node':
+        specifier: ^22.13.10
+        version: 22.19.13
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.4(@types/node@22.19.13)(jsdom@26.1.0)
 
   packages/shared:
     dependencies:
@@ -1451,6 +1475,9 @@ packages:
 
   '@types/react@18.3.28':
     resolution: {integrity: sha512-z9VXpC7MWrhfWipitjNdgCauoMLRdIILQsAEV+ZesIzBq/oUlxk0m3ApZuMFCXdnS4U7KrI+l3WRUEGQ8K1QKw==}
+
+  '@types/ws@8.18.1':
+    resolution: {integrity: sha512-ThVF6DCVhA8kUGy+aazFQ4kXQ7E1Ty7A3ypFOe0IcJV8O/M511G99AW24irKrW56Wt44yG9+ij8FaqoBGkuBXg==}
 
   '@typescript-eslint/eslint-plugin@8.56.1':
     resolution: {integrity: sha512-Jz9ZztpB37dNC+HU2HI28Bs9QXpzCz+y/twHOwhyrIRdbuVDxSytJNDl6z/aAKlaRIwC7y8wJdkBv7FxYGgi0A==}
@@ -3858,6 +3885,10 @@ snapshots:
     dependencies:
       '@types/prop-types': 15.7.15
       csstype: 3.2.3
+
+  '@types/ws@8.18.1':
+    dependencies:
+      '@types/node': 25.3.2
 
   '@typescript-eslint/eslint-plugin@8.56.1(@typescript-eslint/parser@8.56.1(eslint@9.39.3(jiti@1.21.7))(typescript@5.9.3))(eslint@9.39.3(jiti@1.21.7))(typescript@5.9.3)':
     dependencies:

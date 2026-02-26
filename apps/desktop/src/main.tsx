@@ -4,6 +4,7 @@ import ReactDOM from 'react-dom/client';
 import { App } from './App';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import './index.css';
+import { initRealtime } from './realtime';
 
 window.addEventListener('unhandledrejection', (event) => {
   console.error('[Unhandled Promise Rejection]', event.reason);
@@ -21,6 +22,12 @@ if (!rootEl) {
     '<p>Could not find the root element. Please restart the application.</p>' +
     '</div>';
   throw new Error('Root element #root not found');
+}
+
+try {
+  initRealtime();
+} catch (error) {
+  console.warn('[Realtime] bootstrap failed; continuing without realtime', error);
 }
 
 ReactDOM.createRoot(rootEl).render(
