@@ -1,0 +1,108 @@
+import { createServer } from 'node:http';
+import { AddressInfo } from 'node:net';
+import { afterEach, describe, it } from 'vitest';
+import WebSocket from 'ws';
+import { createRealtimeWsServer } from '../realtime/ws-server.js';
+
+function waitForEvent(
+  socket: WebSocket,
+  predicate: (payload: unknown) => boolean,
+  timeoutMs = 5_000,
+): Promise<unknown> {
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      socket.removeListener('message', onMessage);
+      reject(new Error('timed out waiting for websocket message'));
+    }, timeoutMs);
+
+    function onMessage(data: WebSocket.RawData) {
+      try {
+        const parsed = JSON.parse(data.toString());
+        if (!predicate(parsed)) {
+          return;
+        }
+        clearTimeout(timeout);
+        socket.removeListener('message', onMessage);
+        resolve(parsed);
+      } catch {
+        // Ignore non-JSON frames for this test.
+      }
+    }
+
+    socket.on('message', onMessage);
+  });
+}
+
+describe('ws server integration', () => {
+  const disposers: Array<() => Promise<void> | void> = [];
+
+  afterEach(async () => {
+    for (const dispose of disposers.splice(0).reverse()) {
+      await dispose();
+    }
+  });
+
+  it('authenticates, subscribes, receives published event, and handles ping command', async () => {
+    const httpServer = createServer((_, res) => {
+      res.statusCode = 200;
+      res.end('ok');
+    });
+    await new Promise<void>((resolve) => httpServer.listen(0, '127.0.0.1', () => resolve()));
+    disposers.push(
+      () =>
+        new Promise<void>((resolve, reject) => {
+          httpServer.close((err) => (err ? reject(err) : resolve()));
+        }),
+    );
+
+    const realtime = createRealtimeWsServer({
+      server: httpServer,
+      path: '/ws',
+      config: {
+        wsHeartbeatIntervalMs: 15_000,
+        wsHeartbeatTimeoutMs: 30_000,
+        wsMaxSubscriptionsPerConnection: 100,
+        sessionCookieName: 'kata.sid',
+      },
+      deps: {
+        logger: { info: () => {}, error: () => {} },
+        apiKeyAuth: {
+          validateApiKey: async () => ({ teamId: 'team-1', keyId: 'key-1' }),
+        },
+        sessionStore: {
+          getSession: async () => null,
+        },
+        now: () => new Date('2026-02-26T00:00:00.000Z'),
+      },
+    });
+    disposers.push(async () => {
+      await realtime.close();
+    });
+
+    const port = (httpServer.address() as AddressInfo).port;
+    const ws = new WebSocket(`ws://127.0.0.1:${port}/ws`, {
+      headers: { 'x-api-key': 'kat_live_1' },
+    });
+    await new Promise<void>((resolve, reject) => {
+      ws.once('open', () => resolve());
+      ws.once('error', (err) => reject(err));
+    });
+    disposers.push(() => ws.close());
+
+    ws.send(JSON.stringify({ type: 'subscribe', channel: 'team:team-1' }));
+    await waitForEvent(ws, (msg) => (msg as { type?: string }).type === 'subscribed');
+
+    realtime.publish({
+      type: 'spec_updated',
+      channel: 'team:team-1',
+      timestamp: '2026-02-26T00:00:00.000Z',
+      eventId: 'evt_1',
+      encoding: 'json',
+      payload: { specId: 'spec-1' },
+    });
+    await waitForEvent(ws, (msg) => (msg as { type?: string }).type === 'spec_updated');
+
+    ws.send(JSON.stringify({ type: 'ping' }));
+    await waitForEvent(ws, (msg) => (msg as { type?: string }).type === 'pong');
+  });
+});

@@ -1,6 +1,7 @@
 import { serve } from '@hono/node-server';
 import { createGatewayApp } from './app.js';
 import { loadGatewayConfig } from './config.js';
+import { createRealtimeWsServer } from './realtime/ws-server.js';
 
 const config = loadGatewayConfig();
 
@@ -23,5 +24,24 @@ const app = createGatewayApp(config, {
   now: () => new Date(),
 });
 
-serve({ fetch: app.fetch, port: config.port });
+const server = serve({ fetch: app.fetch, port: config.port });
+createRealtimeWsServer({
+  server,
+  path: '/ws',
+  config,
+  deps: {
+    logger,
+    apiKeyAuth: {
+      validateApiKey: async () => null,
+    },
+    sessionStore: {
+      getSession: async () => null,
+    },
+    channelAccess: {
+      resolveSpecTeamId: async () => null,
+      resolveAgentTeamId: async () => null,
+    },
+    now: () => new Date(),
+  },
+});
 console.log(`gateway listening on :${config.port}`);

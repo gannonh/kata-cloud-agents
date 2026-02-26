@@ -6,6 +6,9 @@ import { describe, expect, test } from 'vitest';
 import { App as DesktopApp } from '../../apps/desktop/src/App';
 import { App as MobileApp } from '../../apps/mobile/src/App';
 import { App as WebApp } from '../../apps/web/src/App';
+import { initRealtime as initDesktopRealtime } from '../../apps/desktop/src/realtime';
+import { initRealtime as initMobileRealtime } from '../../apps/mobile/src/realtime';
+import { initRealtime as initWebRealtime } from '../../apps/web/src/realtime';
 
 describe('app shells', () => {
   test('renders desktop app with sidebar and dashboard', () => {
@@ -23,5 +26,11 @@ describe('app shells', () => {
     render(<WebApp />);
     expect(screen.getByRole('heading', { name: 'Kata Cloud Agents (Web)' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Shared UI works' })).toBeInTheDocument();
+  });
+
+  test('initializes realtime client bootstrap for all apps', () => {
+    expect(() => initDesktopRealtime()).not.toThrow();
+    expect(() => initMobileRealtime()).not.toThrow();
+    expect(() => initWebRealtime()).not.toThrow();
   });
 });

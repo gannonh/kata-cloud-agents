@@ -4,6 +4,7 @@ import ReactDOM from 'react-dom/client';
 import { App } from './App';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import './index.css';
+import { initRealtime } from './realtime';
 
 window.addEventListener('unhandledrejection', (event) => {
   console.error('[Unhandled Promise Rejection]', event.reason);
@@ -22,6 +23,8 @@ if (!rootEl) {
     '</div>';
   throw new Error('Root element #root not found');
 }
+
+initRealtime();
 
 ReactDOM.createRoot(rootEl).render(
   <React.StrictMode>

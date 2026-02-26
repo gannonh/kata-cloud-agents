@@ -12,9 +12,12 @@ function makeApp() {
       port: 3001,
       allowedOrigins: ['http://localhost:1420'],
       sessionCookieName: 'kata.sid',
-        redisUrl: 'redis://localhost:6379',
+      redisUrl: 'redis://localhost:6379',
       rateLimitWindowMs: 60_000,
       rateLimitMaxRequests: 2,
+      wsHeartbeatIntervalMs: 15_000,
+      wsHeartbeatTimeoutMs: 30_000,
+      wsMaxSubscriptionsPerConnection: 100,
     },
     {
       logger,
