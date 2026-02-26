@@ -6,8 +6,8 @@ const biome = JSON.parse(fs.readFileSync('biome.json', 'utf8'));
 assert.ok(biome.$schema, 'biome schema reference missing');
 assert.equal(biome.linter.enabled, true, 'biome linter must be enabled');
 assert.equal(biome.formatter.enabled, false, 'biome formatter must be disabled (Prettier handles formatting)');
-assert.ok(biome.files.includes.some(p => p.includes('dist')), 'biome must exclude dist');
-assert.ok(biome.files.includes.some(p => p.includes('node_modules')), 'biome must exclude node_modules');
+assert.ok(biome.files.includes.some(p => p.includes('dist')), 'biome files.includes must have a dist exclusion pattern');
+assert.ok(biome.files.includes.some(p => p.includes('node_modules')), 'biome files.includes must have a node_modules exclusion pattern');
 
 const rootPkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
 assert.ok(rootPkg.scripts['lint:biome'], 'root lint:biome script missing');
