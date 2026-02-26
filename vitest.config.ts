@@ -9,13 +9,12 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'lcov'],
       include: [
-        'apps/desktop/src/App.tsx',
+        'apps/desktop/src/**/*.{ts,tsx}',
         'apps/mobile/src/App.tsx',
         'apps/web/src/App.tsx',
-        'packages/ui/src/components/ui/button.tsx',
-        'packages/ui/src/lib/utils.ts'
+        'packages/ui/src/**/*.{ts,tsx}',
       ],
-      exclude: ['**/*.d.ts'],
+      exclude: ['**/*.d.ts', '**/main.tsx'],
       thresholds: {
         lines: 99,
         functions: 99,

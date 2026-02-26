@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, test, vi } from 'vitest';
 
-import { Button } from '../../packages/ui/src/components/ui/button';
+import { Button } from '../../packages/ui/src';
 import { cn } from '../../packages/ui/src/lib/utils';
 
 describe('ui utils', () => {

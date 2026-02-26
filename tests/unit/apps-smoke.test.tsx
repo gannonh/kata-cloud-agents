@@ -8,9 +8,10 @@ import { App as MobileApp } from '../../apps/mobile/src/App';
 import { App as WebApp } from '../../apps/web/src/App';
 
 describe('app shells', () => {
-  test('renders desktop title', () => {
+  test('renders desktop app with sidebar and dashboard', () => {
     render(<DesktopApp />);
-    expect(screen.getByRole('heading', { name: 'Kata Cloud Agents (Desktop)' })).toBeInTheDocument();
+    expect(screen.getByText('Kata Cloud Agents')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Dashboard' })).toBeInTheDocument();
   });
 
   test('renders mobile title', () => {
