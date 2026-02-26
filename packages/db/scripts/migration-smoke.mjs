@@ -10,6 +10,7 @@ if (!connectionString) {
 
 const pool = new pg.Pool({ connectionString });
 
+// Must match table names defined in src/schema.ts
 const expected = [
   'users',
   'teams',
@@ -23,19 +24,32 @@ const expected = [
   'api_keys',
 ];
 
-const result = await pool.query(`
-  select table_name
-  from information_schema.tables
-  where table_schema = 'public'
-  order by table_name;
-`);
+try {
+  const result = await pool.query(`
+    select table_name
+    from information_schema.tables
+    where table_schema = 'public'
+    order by table_name;
+  `);
 
-const actual = new Set(result.rows.map((row) => row.table_name));
-for (const table of expected) {
-  if (!actual.has(table)) {
-    throw new Error(`missing table after migration: ${table}`);
+  const actual = new Set(result.rows.map((row) => row.table_name));
+
+  if (actual.size === 0) {
+    throw new Error(
+      'no tables found in public schema -- verify migrations ran and DATABASE_URL points to the correct database',
+    );
   }
-}
 
-await pool.end();
-console.log('migration smoke check passed');
+  for (const table of expected) {
+    if (!actual.has(table)) {
+      throw new Error(`missing table after migration: ${table}`);
+    }
+  }
+
+  console.log('migration smoke check passed');
+} catch (error) {
+  console.error('smoke check failed:', error.message);
+  process.exitCode = 1;
+} finally {
+  await pool.end();
+}

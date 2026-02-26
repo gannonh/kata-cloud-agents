@@ -14,7 +14,7 @@ Date: 2026-02-26 12:04:58 PST
 - Result: PASS
 
 2. `pnpm --filter @kata/db test`
-- Result: PASS (`2` tests passed in `src/__tests__/schema-contract.test.ts`)
+- Result: PASS (`3` tests passed in `src/__tests__/schema-contract.test.ts`)
 
 3. `node tests/scaffold/db-migration-artifacts.test.mjs`
 - Result: PASS

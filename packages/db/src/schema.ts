@@ -53,6 +53,8 @@ export const specs = pgTable(
     status: specStatusEnum('status').notNull().default('draft'),
     createdBy: uuid('created_by').notNull().references(() => users.id, { onDelete: 'restrict' }),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    // $onUpdateFn is a Drizzle ORM hook, not a database trigger.
+    // Only updates via Drizzle's .update() auto-set this timestamp.
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().$onUpdateFn(() => sql`now()`).notNull(),
   },
   (table) => [index('specs_team_id_idx').on(table.teamId)],
@@ -80,6 +82,7 @@ export const agentRuns = pgTable(
     specId: uuid('spec_id').notNull().references(() => specs.id, { onDelete: 'cascade' }),
     agentRole: text('agent_role').notNull(),
     status: agentRunStatusEnum('status').notNull().default('queued'),
+    // References an external sandbox/environment service; no FK constraint.
     environmentId: uuid('environment_id').notNull(),
     model: text('model').notNull(),
     startedAt: timestamp('started_at', { withTimezone: true }),
@@ -96,6 +99,7 @@ export const tasks = pgTable(
     agentRunId: uuid('agent_run_id').references(() => agentRuns.id, { onDelete: 'set null' }),
     title: text('title').notNull(),
     status: taskStatusEnum('status').notNull().default('pending'),
+    // Denormalized uuid array for read performance; integrity enforced at the application layer.
     dependsOn: uuid('depends_on').array().notNull().default(sql`ARRAY[]::uuid[]`),
     result: jsonb('result').$type<Record<string, unknown>>(),
   },

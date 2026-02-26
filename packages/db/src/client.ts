@@ -1,3 +1,5 @@
+/** Eagerly connects to PostgreSQL on import. Requires DATABASE_URL.
+ *  Import @kata/db for schema-only access without side effects. */
 import { config as loadEnv } from 'dotenv';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import pg from 'pg';
