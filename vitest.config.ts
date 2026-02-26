@@ -10,10 +10,19 @@ export default defineConfig({
       reporter: ['text', 'lcov'],
       include: [
         'apps/desktop/src/App.tsx',
+        'apps/desktop/src/components/Layout.tsx',
+        'apps/desktop/src/components/Sidebar.tsx',
+        'apps/desktop/src/pages/Dashboard.tsx',
+        'apps/desktop/src/pages/Specs.tsx',
+        'apps/desktop/src/pages/Agents.tsx',
+        'apps/desktop/src/pages/Artifacts.tsx',
+        'apps/desktop/src/pages/Fleet.tsx',
+        'apps/desktop/src/pages/Settings.tsx',
+        'apps/desktop/src/store/app.ts',
         'apps/mobile/src/App.tsx',
         'apps/web/src/App.tsx',
         'packages/ui/src/components/ui/button.tsx',
-        'packages/ui/src/lib/utils.ts'
+        'packages/ui/src/lib/utils.ts',
       ],
       exclude: ['**/*.d.ts'],
       thresholds: {
