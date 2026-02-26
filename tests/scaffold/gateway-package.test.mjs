@@ -18,3 +18,4 @@ assert.ok(pkg.dependencies['@hono/zod-openapi'], '@hono/zod-openapi dependency m
 assert.ok(fs.existsSync('packages/gateway/tsconfig.json'), 'tsconfig missing');
 assert.ok(fs.existsSync('packages/gateway/vitest.config.ts'), 'vitest config missing');
 assert.ok(fs.existsSync('packages/gateway/src/index.ts'), 'src/index.ts missing');
+assert.ok(fs.existsSync('packages/gateway/.env.example'), '.env example missing');
