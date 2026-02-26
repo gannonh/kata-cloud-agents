@@ -4,11 +4,16 @@ import { loadGatewayConfig } from './config.js';
 
 const config = loadGatewayConfig();
 
+const logger = {
+  info: (meta: Record<string, unknown>, message: string) => console.log(message, meta),
+  error: (meta: Record<string, unknown>, message: string) => console.error(message, meta),
+};
+
+// Stub adapters reject all credentials — wire real adapters before production use
+logger.error({}, 'gateway started with stub auth adapters; all authenticated requests will be rejected');
+
 const app = createGatewayApp(config, {
-  logger: {
-    info: (meta, message) => console.log(message, meta),
-    error: (meta, message) => console.error(message, meta),
-  },
+  logger,
   apiKeyAuth: {
     validateApiKey: async () => null,
   },

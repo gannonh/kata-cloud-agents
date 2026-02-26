@@ -3,6 +3,17 @@ export type Logger = {
   error: (meta: Record<string, unknown>, message: string) => void;
 };
 
+export type ErrorCode =
+  | 'INVALID_API_KEY'
+  | 'AUTH_REQUIRED'
+  | 'INVALID_SESSION'
+  | 'SESSION_EXPIRED'
+  | 'AUTH_SERVICE_UNAVAILABLE'
+  | 'RATE_LIMITED'
+  | 'NOT_FOUND'
+  | 'INTERNAL_ERROR'
+  | 'HTTP_ERROR';
+
 export type ApiKeyPrincipal = {
   type: 'api_key';
   teamId: string;
@@ -18,19 +29,26 @@ export type SessionPrincipal = {
 
 export type AuthPrincipal = ApiKeyPrincipal | SessionPrincipal;
 
+export type ApiKeyIdentity = Omit<ApiKeyPrincipal, 'type'>;
+
+export type SessionData = {
+  userId: string;
+  teamId: string;
+  expiresAt: string;
+};
+
 export type ApiKeyAuthAdapter = {
-  validateApiKey: (rawKey: string) => Promise<{ teamId: string; keyId: string; scopes?: string[] } | null>;
+  validateApiKey: (rawKey: string) => Promise<ApiKeyIdentity | null>;
 };
 
 export type SessionStoreAdapter = {
-  getSession: (sessionId: string) => Promise<{ userId: string; teamId: string; expiresAt: string } | null>;
+  getSession: (sessionId: string) => Promise<SessionData | null>;
 };
 
 export type GatewayConfig = {
   port: number;
   allowedOrigins: string[];
   sessionCookieName: string;
-  sessionCookieSecret: string;
   redisUrl: string;
   rateLimitWindowMs: number;
   rateLimitMaxRequests: number;
@@ -48,3 +66,5 @@ export type GatewayVars = {
   startedAtMs: number;
   principal?: AuthPrincipal;
 };
+
+export type GatewayEnv = { Variables: GatewayVars };

@@ -12,8 +12,7 @@ function makeApp() {
       port: 3001,
       allowedOrigins: ['http://localhost:1420'],
       sessionCookieName: 'kata.sid',
-      sessionCookieSecret: 'test-secret',
-      redisUrl: 'redis://localhost:6379',
+        redisUrl: 'redis://localhost:6379',
       rateLimitWindowMs: 60_000,
       rateLimitMaxRequests: 2,
     },
@@ -66,10 +65,10 @@ describe('rate limit + cors + logging', () => {
     expect((await app.request('/api/specs', { headers: clientTwoHeaders })).status).toBe(200);
 
     const blockedClientOne = await app.request('/api/specs', { headers: clientOneHeaders });
-    const allowedClientTwo = await app.request('/api/specs', { headers: clientTwoHeaders });
+    const blockedClientTwo = await app.request('/api/specs', { headers: clientTwoHeaders });
 
     expect(blockedClientOne.status).toBe(429);
-    expect(allowedClientTwo.status).toBe(429);
+    expect(blockedClientTwo.status).toBe(429);
   });
 
   it('sets allow-origin header for allowed origins', async () => {

@@ -32,7 +32,7 @@ export function authMiddleware(config: GatewayConfig, deps: GatewayDeps): Middle
       }
       const expiresAtMs = Date.parse(session.expiresAt);
       if (!Number.isFinite(expiresAtMs) || expiresAtMs <= deps.now().getTime()) {
-        return jsonError(c, 401, 'INVALID_SESSION', 'Invalid session');
+        return jsonError(c, 401, 'SESSION_EXPIRED', 'Session expired');
       }
       c.set('principal', {
         type: 'session_user',

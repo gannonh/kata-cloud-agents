@@ -6,7 +6,6 @@ function makeConfig() {
     port: 3001,
     allowedOrigins: ['http://localhost:1420'],
     sessionCookieName: 'kata.sid',
-    sessionCookieSecret: 'test-secret',
     redisUrl: 'redis://localhost:6379',
     rateLimitWindowMs: 60_000,
     rateLimitMaxRequests: 60,
@@ -83,7 +82,52 @@ describe('auth middleware', () => {
     });
     expect(res.status).toBe(401);
     const body = await res.json();
+    expect(body.error.code).toBe('SESSION_EXPIRED');
+  });
+
+  it('returns INVALID_API_KEY for unrecognized key', async () => {
+    const app = createGatewayApp(makeConfig(), makeDeps());
+    const res = await app.request('/api/teams', {
+      headers: { 'x-api-key': 'kat_live_unknown' },
+    });
+    expect(res.status).toBe(401);
+    const body = await res.json();
+    expect(body.error.code).toBe('INVALID_API_KEY');
+  });
+
+  it('returns INVALID_SESSION for unrecognized session', async () => {
+    const app = createGatewayApp(makeConfig(), makeDeps());
+    const res = await app.request('/api/teams', {
+      headers: { cookie: 'kata.sid=unknown-session' },
+    });
+    expect(res.status).toBe(401);
+    const body = await res.json();
     expect(body.error.code).toBe('INVALID_SESSION');
+  });
+
+  it('prefers API key over session cookie when both present', async () => {
+    const deps = makeDeps({
+      apiKeyAuth: {
+        validateApiKey: vi.fn(async () => ({ teamId: 'api-team', keyId: 'key-1' })),
+      },
+      sessionStore: {
+        getSession: vi.fn(async () => ({
+          userId: 'user-1',
+          teamId: 'session-team',
+          expiresAt: '2026-02-27T00:00:00.000Z',
+        })),
+      },
+    });
+    const app = createGatewayApp(makeConfig(), deps);
+    const res = await app.request('/api/teams', {
+      headers: {
+        'x-api-key': 'kat_live_123',
+        cookie: 'kata.sid=sid-123',
+      },
+    });
+    expect(res.status).toBe(200);
+    expect(deps.apiKeyAuth.validateApiKey).toHaveBeenCalledWith('kat_live_123');
+    expect(deps.sessionStore.getSession).not.toHaveBeenCalled();
   });
 
   it('fails closed when API key adapter throws', async () => {

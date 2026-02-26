@@ -21,5 +21,5 @@ $ pnpm --filter @kata/gateway typecheck
 $ pnpm --filter @kata/gateway test
 > @kata/gateway@0.0.0 test
 > vitest run
-# 4 passed, 10 passed
+# 6 passed (6 files), 21 passed (21 tests)
 ```

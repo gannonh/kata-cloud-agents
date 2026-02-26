@@ -1,5 +1,7 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { cors } from 'hono/cors';
+import { HTTPException } from 'hono/http-exception';
+import type { ContentfulStatusCode } from 'hono/utils/http-status';
 import { authMiddleware } from './middleware/auth.js';
 import { jsonError } from './middleware/error-handler.js';
 import { createRateLimitMiddleware } from './middleware/rate-limit.js';
@@ -10,10 +12,10 @@ import { registerArtifactsRoutes } from './routes/artifacts.js';
 import { registerHealthRoute } from './routes/health.js';
 import { registerSpecsRoutes } from './routes/specs.js';
 import { registerTeamsRoutes } from './routes/teams.js';
-import type { GatewayConfig, GatewayDeps } from './types.js';
+import type { GatewayConfig, GatewayDeps, GatewayVars } from './types.js';
 
 export function createGatewayApp(config: GatewayConfig, deps: GatewayDeps) {
-  const app = new OpenAPIHono();
+  const app = new OpenAPIHono<{ Variables: GatewayVars }>();
 
   app.use('*', requestContextMiddleware);
   app.use('*', cors({ origin: config.allowedOrigins, credentials: true }));
@@ -29,6 +31,10 @@ export function createGatewayApp(config: GatewayConfig, deps: GatewayDeps) {
 
   app.notFound((c) => jsonError(c, 404, 'NOT_FOUND', 'Route not found'));
   app.onError((err, c) => {
+    if (err instanceof HTTPException) {
+      deps.logger.error({ err, status: err.status }, 'http exception');
+      return jsonError(c, err.status as ContentfulStatusCode, 'HTTP_ERROR', err.message);
+    }
     deps.logger.error({ err }, 'unhandled gateway error');
     return jsonError(c, 500, 'INTERNAL_ERROR', 'Internal server error');
   });

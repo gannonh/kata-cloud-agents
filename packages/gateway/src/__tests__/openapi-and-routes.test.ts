@@ -5,7 +5,6 @@ const config = {
   port: 3001,
   allowedOrigins: ['http://localhost:1420'],
   sessionCookieName: 'kata.sid',
-  sessionCookieSecret: 'test-secret',
   redisUrl: 'redis://localhost:6379',
   rateLimitWindowMs: 60_000,
   rateLimitMaxRequests: 60,

@@ -25,7 +25,7 @@ export function createRateLimitMiddleware(windowMs: number, maxRequests: number)
   return async (c, next) => {
     const now = Date.now();
     const forwardedFor = c.req.header('x-forwarded-for')?.split(',')[0];
-    const ip = normalizeIp(c.req.header('x-real-ip')) ?? normalizeIp(forwardedFor) ?? 'unknown';
+    const ip = normalizeIp(forwardedFor) ?? normalizeIp(c.req.header('x-real-ip')) ?? 'unknown';
     const key = `${ip}:${c.req.path}`;
 
     const current = buckets.get(key);

@@ -1,4 +1,5 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
+import type { GatewayEnv } from '../types.js';
 
 const TeamsListSchema = z.object({
   items: z.array(
@@ -22,6 +23,6 @@ const route = createRoute({
   },
 });
 
-export function registerTeamsRoutes(app: OpenAPIHono) {
+export function registerTeamsRoutes(app: OpenAPIHono<GatewayEnv>) {
   app.openapi(route, (c) => c.json({ items: [], message: 'Not implemented yet' }));
 }
