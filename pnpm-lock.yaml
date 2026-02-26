@@ -171,7 +171,7 @@ importers:
         version: 17.3.1
       drizzle-orm:
         specifier: ^0.45.1
-        version: 0.45.1(pg@8.19.0)
+        version: 0.45.1(@types/pg@8.16.0)(pg@8.19.0)
       pg:
         specifier: ^8.19.0
         version: 8.19.0
@@ -179,6 +179,9 @@ importers:
       '@types/node':
         specifier: ^25.3.2
         version: 25.3.2
+      '@types/pg':
+        specifier: ^8.16.0
+        version: 8.16.0
       drizzle-kit:
         specifier: ^0.31.9
         version: 0.31.9
@@ -1375,6 +1378,9 @@ packages:
 
   '@types/node@25.3.2':
     resolution: {integrity: sha512-RpV6r/ij22zRRdyBPcxDeKAzH43phWVKEjL2iksqo1Vz3CuBUrgmPpPhALKiRfU7OMCmeeO9vECBMsV0hMTG8Q==}
+
+  '@types/pg@8.16.0':
+    resolution: {integrity: sha512-RmhMd/wD+CF8Dfo+cVIy3RR5cl8CyfXQ0tGgW6XBL8L4LM/UTEbNXYRbLwU6w+CgrKBNbrQWt4FUtTfaU5jSYQ==}
 
   '@types/prop-types@15.7.15':
     resolution: {integrity: sha512-F6bEyamV9jKGAFBEmlQnesRPGOQqS2+Uwi0Em15xenOxHaf2hv6L8YCVn3rPdPJOiJfPiCnLIRyvwVaqMY3MIw==}
@@ -3699,6 +3705,12 @@ snapshots:
     dependencies:
       undici-types: 7.18.2
 
+  '@types/pg@8.16.0':
+    dependencies:
+      '@types/node': 25.3.2
+      pg-protocol: 1.12.0
+      pg-types: 2.2.0
+
   '@types/prop-types@15.7.15': {}
 
   '@types/react-dom@18.3.7(@types/react@18.3.28)':
@@ -4072,8 +4084,9 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  drizzle-orm@0.45.1(pg@8.19.0):
+  drizzle-orm@0.45.1(@types/pg@8.16.0)(pg@8.19.0):
     optionalDependencies:
+      '@types/pg': 8.16.0
       pg: 8.19.0
 
   eastasianwidth@0.2.0: {}
