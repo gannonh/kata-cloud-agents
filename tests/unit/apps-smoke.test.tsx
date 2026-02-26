@@ -1,3 +1,5 @@
+// biome-ignore lint/correctness/noUnusedImports: React must be in scope for JSX
+import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, test } from 'vitest';
 
