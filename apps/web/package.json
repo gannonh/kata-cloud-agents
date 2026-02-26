@@ -11,6 +11,7 @@
     "test": "node ../../tests/scaffold/web-app.test.mjs"
   },
   "dependencies": {
+    "@kata/realtime-client": "workspace:*",
     "@kata/ui": "workspace:*",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"

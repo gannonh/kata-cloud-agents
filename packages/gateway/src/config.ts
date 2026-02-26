@@ -9,7 +9,16 @@ const EnvSchema = z.object({
   REDIS_URL: z.string().url(),
   RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(60000),
   RATE_LIMIT_MAX_REQUESTS: z.coerce.number().int().positive().default(60),
-});
+  WS_HEARTBEAT_INTERVAL_MS: z.coerce.number().int().positive().default(15000),
+  WS_HEARTBEAT_TIMEOUT_MS: z.coerce.number().int().positive().default(30000),
+  WS_MAX_SUBSCRIPTIONS_PER_CONNECTION: z.coerce.number().int().positive().default(100),
+}).refine(
+  (value) => value.WS_HEARTBEAT_TIMEOUT_MS > value.WS_HEARTBEAT_INTERVAL_MS,
+  {
+    path: ['WS_HEARTBEAT_TIMEOUT_MS'],
+    message: 'WS_HEARTBEAT_TIMEOUT_MS must be greater than WS_HEARTBEAT_INTERVAL_MS',
+  },
+);
 
 export function loadGatewayConfig(env: NodeJS.ProcessEnv = process.env): GatewayConfig {
   if (env === process.env) {
@@ -31,5 +40,8 @@ export function loadGatewayConfig(env: NodeJS.ProcessEnv = process.env): Gateway
     redisUrl: parsed.REDIS_URL,
     rateLimitWindowMs: parsed.RATE_LIMIT_WINDOW_MS,
     rateLimitMaxRequests: parsed.RATE_LIMIT_MAX_REQUESTS,
+    wsHeartbeatIntervalMs: parsed.WS_HEARTBEAT_INTERVAL_MS,
+    wsHeartbeatTimeoutMs: parsed.WS_HEARTBEAT_TIMEOUT_MS,
+    wsMaxSubscriptionsPerConnection: parsed.WS_MAX_SUBSCRIPTIONS_PER_CONNECTION,
   };
 }
