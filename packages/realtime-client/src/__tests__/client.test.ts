@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createRealtimeClient } from '../client.js';
 
 class FakeWebSocket {
@@ -32,6 +32,10 @@ describe('realtime client', () => {
     vi.useFakeTimers();
   });
 
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('reconnects with backoff after unexpected close', () => {
     const sockets: FakeWebSocket[] = [];
     const client = createRealtimeClient({
@@ -45,6 +49,7 @@ describe('realtime client', () => {
         minMs: 250,
         maxMs: 1_000,
       },
+      random: () => 0,
     });
 
     client.connect();

@@ -1,6 +1,6 @@
 import { createServer } from 'node:http';
 import { AddressInfo } from 'node:net';
-import { afterEach, describe, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import WebSocket from 'ws';
 import { createRealtimeWsServer } from '../realtime/ws-server.js';
 
@@ -80,9 +80,7 @@ describe('ws server integration', () => {
     });
 
     const port = (httpServer.address() as AddressInfo).port;
-    const ws = new WebSocket(`ws://127.0.0.1:${port}/ws`, {
-      headers: { 'x-api-key': 'kat_live_1' },
-    });
+    const ws = new WebSocket(`ws://127.0.0.1:${port}/ws?apiKey=kat_live_1`);
     await new Promise<void>((resolve, reject) => {
       ws.once('open', () => resolve());
       ws.once('error', (err) => reject(err));
@@ -103,6 +101,59 @@ describe('ws server integration', () => {
     await waitForEvent(ws, (msg) => (msg as { type?: string }).type === 'spec_updated');
 
     ws.send(JSON.stringify({ type: 'ping' }));
-    await waitForEvent(ws, (msg) => (msg as { type?: string }).type === 'pong');
+    const pong = (await waitForEvent(ws, (msg) => (msg as { type?: string }).type === 'pong')) as {
+      timestamp?: string;
+    };
+    expect(pong.timestamp).toBe('2026-02-26T00:00:00.000Z');
+  });
+
+  it('rejects malformed cookie values without crashing upgrade handling', async () => {
+    const httpServer = createServer((_, res) => {
+      res.statusCode = 200;
+      res.end('ok');
+    });
+    await new Promise<void>((resolve) => httpServer.listen(0, '127.0.0.1', () => resolve()));
+    disposers.push(
+      () =>
+        new Promise<void>((resolve, reject) => {
+          httpServer.close((err) => (err ? reject(err) : resolve()));
+        }),
+    );
+
+    const realtime = createRealtimeWsServer({
+      server: httpServer,
+      path: '/ws',
+      config: {
+        wsHeartbeatIntervalMs: 15_000,
+        wsHeartbeatTimeoutMs: 30_000,
+        wsMaxSubscriptionsPerConnection: 100,
+        sessionCookieName: 'kata.sid',
+      },
+      deps: {
+        logger: { info: () => {}, error: () => {} },
+        apiKeyAuth: {
+          validateApiKey: async () => null,
+        },
+        sessionStore: {
+          getSession: async () => null,
+        },
+        now: () => new Date('2026-02-26T00:00:00.000Z'),
+      },
+    });
+    disposers.push(async () => {
+      await realtime.close();
+    });
+
+    const port = (httpServer.address() as AddressInfo).port;
+    const status = await new Promise<number>((resolve, reject) => {
+      const ws = new WebSocket(`ws://127.0.0.1:${port}/ws`, {
+        headers: { cookie: 'kata.sid=%E0%A4%A' },
+      });
+      ws.once('open', () => reject(new Error('expected websocket upgrade to be rejected')));
+      ws.once('unexpected-response', (_, response) => resolve(response.statusCode ?? 0));
+      ws.once('error', (err) => reject(err));
+    });
+
+    expect(status).toBe(401);
   });
 });

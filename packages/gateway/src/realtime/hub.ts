@@ -68,11 +68,15 @@ export function createRealtimeHub(now: () => number = () => Date.now()) {
     const members = channelMembers.get(channel);
     if (!members || members.size === 0) return 0;
     let sent = 0;
-    for (const connectionId of members) {
+    for (const connectionId of [...members]) {
       const state = byId.get(connectionId);
       if (!state) continue;
-      state.connection.send(payload);
-      sent += 1;
+      try {
+        state.connection.send(payload);
+        sent += 1;
+      } catch {
+        removeConnection(connectionId);
+      }
     }
     return sent;
   }

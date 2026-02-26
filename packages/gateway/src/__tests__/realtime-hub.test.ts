@@ -33,4 +33,21 @@ describe('realtime hub', () => {
     const delivered = hub.publish('team:t1', '{"type":"spec_updated"}');
     expect(delivered).toBe(0);
   });
+
+  it('continues fanout when one send throws', () => {
+    const hub = createRealtimeHub(() => 1_000);
+    const sendA = vi.fn(() => {
+      throw new Error('socket closed');
+    });
+    const sendB = vi.fn();
+
+    hub.addConnection({ id: 'a', send: sendA, close: vi.fn(), ping: vi.fn() });
+    hub.addConnection({ id: 'b', send: sendB, close: vi.fn(), ping: vi.fn() });
+    hub.subscribe('a', 'team:t1');
+    hub.subscribe('b', 'team:t1');
+
+    const delivered = hub.publish('team:t1', '{"type":"spec_updated"}');
+    expect(delivered).toBe(1);
+    expect(sendB).toHaveBeenCalledTimes(1);
+  });
 });

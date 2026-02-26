@@ -6,8 +6,12 @@ export type RealtimeChannel =
   | { kind: 'agent'; id: string };
 
 export function parseChannel(value: string): RealtimeChannel | null {
-  const [kind, ...rest] = value.split(':');
-  const id = rest.join(':').trim();
+  const parts = value.split(':');
+  if (parts.length !== 2) {
+    return null;
+  }
+  const [kind, rawId] = parts;
+  const id = rawId.trim();
   if (!id) {
     return null;
   }

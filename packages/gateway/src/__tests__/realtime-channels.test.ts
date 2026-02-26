@@ -21,7 +21,12 @@ describe('channel authorization', () => {
     await expect(authorizeChannel('spec:spec-1', principal, access)).resolves.toEqual({ ok: true });
   });
 
+  it('allows agent channel in same team', async () => {
+    await expect(authorizeChannel('agent:agent-1', principal, access)).resolves.toEqual({ ok: true });
+  });
+
   it('rejects invalid channel format', async () => {
     await expect(authorizeChannel('bogus', principal, access)).resolves.toEqual({ ok: false });
+    await expect(authorizeChannel('spec:spec-1:extra', principal, access)).resolves.toEqual({ ok: false });
   });
 });

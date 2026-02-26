@@ -11,10 +11,19 @@ export function runHeartbeatSweep(hub: RealtimeHub, options: HeartbeatSweepOptio
   const nowMs = options.now();
   for (const state of hub.listStates()) {
     if (nowMs - state.lastPongAt > options.timeoutMs) {
-      state.connection.close(options.closeCode, options.closeReason);
-      hub.removeConnection(state.connection.id);
+      try {
+        state.connection.close(options.closeCode, options.closeReason);
+      } catch {
+        // Ignore close errors and continue sweep; connection is still removed below.
+      } finally {
+        hub.removeConnection(state.connection.id);
+      }
       continue;
     }
-    state.connection.ping();
+    try {
+      state.connection.ping();
+    } catch {
+      hub.removeConnection(state.connection.id);
+    }
   }
 }

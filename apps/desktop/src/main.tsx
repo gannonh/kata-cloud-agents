@@ -24,7 +24,11 @@ if (!rootEl) {
   throw new Error('Root element #root not found');
 }
 
-initRealtime();
+try {
+  initRealtime();
+} catch (error) {
+  console.warn('[Realtime] bootstrap failed; continuing without realtime', error);
+}
 
 ReactDOM.createRoot(rootEl).render(
   <React.StrictMode>

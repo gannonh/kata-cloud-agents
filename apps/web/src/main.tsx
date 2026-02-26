@@ -5,7 +5,11 @@ import './index.css';
 import { App } from './App';
 import { initRealtime } from './realtime';
 
-initRealtime();
+try {
+  initRealtime();
+} catch (error) {
+  console.warn('[Realtime] bootstrap failed; continuing without realtime', error);
+}
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

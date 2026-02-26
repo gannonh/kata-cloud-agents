@@ -31,16 +31,23 @@ function getCookie(cookieHeader: string | null, name: string): string | null {
     const [key, ...valueParts] = part.trim().split('=');
     if (key !== name) continue;
     const value = valueParts.join('=').trim();
-    return value ? decodeURIComponent(value) : null;
+    if (!value) {
+      return null;
+    }
+    try {
+      return decodeURIComponent(value);
+    } catch {
+      return null;
+    }
   }
   return null;
 }
 
-function jsonEnvelope(type: OutboundType, payload: unknown, channel?: string): string {
+function jsonEnvelope(type: OutboundType, payload: unknown, now: () => Date, channel?: string): string {
   return JSON.stringify({
     type,
     channel,
-    timestamp: new Date().toISOString(),
+    timestamp: now().toISOString(),
     eventId: crypto.randomUUID(),
     encoding: 'json',
     payload,
@@ -114,7 +121,14 @@ export function createRealtimeWsServer(input: {
   heartbeatTimer.unref();
 
   input.server.on('upgrade', async (req, socket, head) => {
-    if (req.url !== input.path) {
+    let pathname: string;
+    try {
+      pathname = new URL(req.url ?? '', 'http://localhost').pathname;
+    } catch {
+      return;
+    }
+
+    if (pathname !== input.path) {
       return;
     }
 
@@ -153,20 +167,20 @@ export function createRealtimeWsServer(input: {
         try {
           parsedRaw = JSON.parse(raw.toString());
         } catch {
-          ws.send(jsonEnvelope('error', { code: 'INVALID_MESSAGE', message: 'Message must be valid JSON' }));
+          ws.send(jsonEnvelope('error', { code: 'INVALID_MESSAGE', message: 'Message must be valid JSON' }, input.deps.now));
           return;
         }
 
         const commandResult = InboundCommandSchema.safeParse(parsedRaw);
         if (!commandResult.success) {
-          ws.send(jsonEnvelope('error', { code: 'INVALID_COMMAND', message: 'Unsupported command shape' }));
+          ws.send(jsonEnvelope('error', { code: 'INVALID_COMMAND', message: 'Unsupported command shape' }, input.deps.now));
           return;
         }
         const command = commandResult.data;
 
         if (command.type === 'ping') {
           hub.markPong(connectionId);
-          ws.send(jsonEnvelope('pong', { ok: true }));
+          ws.send(jsonEnvelope('pong', { ok: true }, input.deps.now));
           return;
         }
 
@@ -177,29 +191,36 @@ export function createRealtimeWsServer(input: {
               jsonEnvelope('error', {
                 code: 'MAX_SUBSCRIPTIONS_REACHED',
                 message: 'Connection has reached max subscriptions',
-              }),
+              }, input.deps.now),
             );
             return;
           }
 
           const authorization = await authorizeChannel(command.channel, authResult.principal, channelAccess);
           if (!authorization.ok) {
-            ws.send(jsonEnvelope('error', { code: 'CHANNEL_FORBIDDEN', message: 'Channel access denied' }));
+            ws.send(jsonEnvelope('error', { code: 'CHANNEL_FORBIDDEN', message: 'Channel access denied' }, input.deps.now));
             return;
           }
           hub.subscribe(connectionId, command.channel);
-          ws.send(jsonEnvelope('subscribed', { channel: command.channel }, command.channel));
+          ws.send(jsonEnvelope('subscribed', { channel: command.channel }, input.deps.now, command.channel));
           return;
         }
 
-        const removed = hub.unsubscribe(connectionId, command.channel);
-        ws.send(
-          jsonEnvelope(
-            'unsubscribed',
-            { channel: command.channel, removed },
-            command.channel,
-          ),
-        );
+        if (command.type === 'unsubscribe') {
+          const removed = hub.unsubscribe(connectionId, command.channel);
+          ws.send(
+            jsonEnvelope(
+              'unsubscribed',
+              { channel: command.channel, removed },
+              input.deps.now,
+              command.channel,
+            ),
+          );
+          return;
+        }
+
+        const _exhaustive: never = command;
+        ws.send(jsonEnvelope('error', { code: 'INVALID_COMMAND', message: 'Unsupported command type' }, input.deps.now));
       });
     });
   });

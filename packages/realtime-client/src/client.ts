@@ -58,7 +58,10 @@ export function createRealtimeClient(options: RealtimeClientOptions) {
     if (manuallyClosed || reconnectTimer) {
       return;
     }
-    const delay = Math.min(maxMs, minMs * 2 ** reconnectAttempt);
+    const baseDelay = Math.min(maxMs, minMs * 2 ** reconnectAttempt);
+    const jitterSource = options.random ?? Math.random;
+    const jitterMultiplier = 1 + jitterSource() * 0.25;
+    const delay = Math.min(maxMs, Math.round(baseDelay * jitterMultiplier));
     reconnectAttempt += 1;
     emit('reconnecting');
     reconnectTimer = setTimeout(() => {

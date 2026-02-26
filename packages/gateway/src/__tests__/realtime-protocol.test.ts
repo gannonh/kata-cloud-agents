@@ -23,4 +23,16 @@ describe('realtime protocol', () => {
     const cmd = InboundCommandSchema.parse({ type: 'subscribe', channel: 'team:t1' });
     expect(cmd.type).toBe('subscribe');
   });
+
+  it('accepts unsubscribe and ping commands', () => {
+    const unsubscribe = InboundCommandSchema.parse({ type: 'unsubscribe', channel: 'team:t1' });
+    expect(unsubscribe.type).toBe('unsubscribe');
+    const ping = InboundCommandSchema.parse({ type: 'ping' });
+    expect(ping.type).toBe('ping');
+  });
+
+  it('rejects malformed inbound commands', () => {
+    expect(InboundCommandSchema.safeParse({ type: 'subscribe' }).success).toBe(false);
+    expect(InboundCommandSchema.safeParse({ type: 'unknown', channel: 'team:t1' }).success).toBe(false);
+  });
 });

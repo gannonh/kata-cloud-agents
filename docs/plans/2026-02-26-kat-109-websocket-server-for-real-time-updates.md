@@ -12,7 +12,7 @@
 
 Execution discipline references: `@test-driven-development`, `@verification-before-completion`, `@committing-changes`
 
-### Task 1: Gateway Realtime Config + Dependencies Baseline
+## Task 1: Gateway Realtime Config + Dependencies Baseline
 
 **Files:**
 - Modify: `packages/gateway/package.json`
@@ -70,7 +70,7 @@ git add packages/gateway/package.json packages/gateway/src/config.ts packages/ga
 git commit -m "feat(gateway): add websocket config and ws dependency"
 ```
 
-### Task 2: Protocol Envelope and Message Validation
+## Task 2: Protocol Envelope and Message Validation
 
 **Files:**
 - Create: `packages/gateway/src/realtime/protocol.ts`
@@ -162,7 +162,7 @@ git add packages/gateway/src/realtime/protocol.ts packages/gateway/src/__tests__
 git commit -m "feat(gateway): add websocket protocol schemas"
 ```
 
-### Task 3: Shared Principal Resolution for HTTP + WebSocket Connect
+## Task 3: Shared Principal Resolution for HTTP + WebSocket Connect
 
 **Files:**
 - Create: `packages/gateway/src/auth/resolve-principal.ts`
@@ -220,7 +220,7 @@ git add packages/gateway/src/auth/resolve-principal.ts packages/gateway/src/__te
 git commit -m "refactor(gateway): share auth principal resolution for ws and http"
 ```
 
-### Task 4: Channel Parsing + Authorization Gates
+## Task 4: Channel Parsing + Authorization Gates
 
 **Files:**
 - Create: `packages/gateway/src/realtime/channels.ts`
@@ -278,7 +278,7 @@ git add packages/gateway/src/realtime/channels.ts packages/gateway/src/__tests__
 git commit -m "feat(gateway): add websocket channel parsing and authz"
 ```
 
-### Task 5: In-Memory Connection Hub + Heartbeat Lifecycle
+## Task 5: In-Memory Connection Hub + Heartbeat Lifecycle
 
 **Files:**
 - Create: `packages/gateway/src/realtime/hub.ts`
@@ -332,7 +332,7 @@ git add packages/gateway/src/realtime/hub.ts packages/gateway/src/realtime/heart
 git commit -m "feat(gateway): add realtime hub and heartbeat manager"
 ```
 
-### Task 6: Wire Native WebSocket Server into Gateway Runtime
+## Task 6: Wire Native WebSocket Server into Gateway Runtime
 
 **Files:**
 - Create: `packages/gateway/src/realtime/ws-server.ts`
@@ -378,7 +378,7 @@ git add packages/gateway/src/realtime/ws-server.ts packages/gateway/src/__tests_
 git commit -m "feat(gateway): wire native websocket server with channel subscriptions"
 ```
 
-### Task 7: Create `@kata/realtime-client` Reconnection Package
+## Task 7: Create `@kata/realtime-client` Reconnection Package
 
 **Files:**
 - Create: `packages/realtime-client/package.json`
@@ -433,7 +433,7 @@ git add packages/realtime-client tests/scaffold/realtime-client-package.test.mjs
 git commit -m "feat(realtime-client): add reconnecting websocket client package"
 ```
 
-### Task 8: Integrate Shared Realtime Client in Web/Desktop/Mobile
+## Task 8: Integrate Shared Realtime Client in Web/Desktop/Mobile
 
 **Files:**
 - Modify: `apps/web/package.json`
@@ -476,7 +476,7 @@ git add apps/web/package.json apps/desktop/package.json apps/mobile/package.json
 git commit -m "feat(apps): wire shared realtime client bootstrap"
 ```
 
-### Task 9: End-to-End Verification + Completion Evidence Draft
+## Task 9: End-to-End Verification + Completion Evidence Draft
 
 **Files:**
 - Create: `docs/verification/kat-109-websocket-realtime.md`

@@ -25,7 +25,7 @@ const app = createGatewayApp(config, {
 });
 
 const server = serve({ fetch: app.fetch, port: config.port });
-createRealtimeWsServer({
+const realtimeWs = createRealtimeWsServer({
   server,
   path: '/ws',
   config,
@@ -44,4 +44,31 @@ createRealtimeWsServer({
     now: () => new Date(),
   },
 });
+
+let shuttingDown = false;
+async function shutdown(signal: NodeJS.Signals) {
+  if (shuttingDown) {
+    return;
+  }
+  shuttingDown = true;
+  logger.info({ signal }, 'shutting down gateway server');
+  try {
+    await realtimeWs.close();
+    await new Promise<void>((resolve, reject) => {
+      server.close((err) => (err ? reject(err) : resolve()));
+    });
+    process.exit(0);
+  } catch (err) {
+    logger.error({ err, signal }, 'failed graceful shutdown');
+    process.exit(1);
+  }
+}
+
+process.once('SIGINT', () => {
+  void shutdown('SIGINT');
+});
+process.once('SIGTERM', () => {
+  void shutdown('SIGTERM');
+});
+
 console.log(`gateway listening on :${config.port}`);
