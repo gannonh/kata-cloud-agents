@@ -89,6 +89,12 @@ jobs:
         with:
           targets: ${{ matrix.rust-targets }}
 
+      - name: Ensure matrix Rust target is installed
+        if: matrix.rust-targets != ''
+        run: |
+          rustup target add ${{ matrix.rust-targets }} --toolchain stable
+          rustup target list --installed
+
       - name: Rust cache
         uses: swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5 # v2.8.2
         with:
