@@ -11,9 +11,11 @@
     "test:unit": "vitest run --config vitest.config.ts",
     "coverage": "vitest run --config vitest.config.ts --coverage",
     "test:e2e": "playwright test",
+    "lint:biome": "biome check .",
     "check": "pnpm lint && pnpm typecheck && pnpm test"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.4.4",
     "@eslint/js": "^9.21.0",
     "@playwright/test": "^1.51.1",
     "@testing-library/jest-dom": "^6.7.0",
