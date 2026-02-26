@@ -16,7 +16,10 @@
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/migrate.ts",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "db:up": "docker compose -f ../../containers/docker-compose.yml up -d",
+    "db:down": "docker compose -f ../../containers/docker-compose.yml down",
+    "db:smoke": "node scripts/migration-smoke.mjs"
   },
   "dependencies": {
     "dotenv": "^17.3.1",
