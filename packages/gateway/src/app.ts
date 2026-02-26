@@ -2,6 +2,7 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import { cors } from 'hono/cors';
 import { authMiddleware } from './middleware/auth.js';
 import { jsonError } from './middleware/error-handler.js';
+import { createRateLimitMiddleware } from './middleware/rate-limit.js';
 import { requestContextMiddleware } from './middleware/request-context.js';
 import { requestLoggerMiddleware } from './middleware/request-logger.js';
 import { registerAgentsRoutes } from './routes/agents.js';
@@ -17,6 +18,7 @@ export function createGatewayApp(config: GatewayConfig, deps: GatewayDeps) {
   app.use('*', requestContextMiddleware);
   app.use('*', cors({ origin: config.allowedOrigins, credentials: true }));
   app.use('*', requestLoggerMiddleware(deps.logger));
+  app.use('/api/*', createRateLimitMiddleware(config.rateLimitWindowMs, config.rateLimitMaxRequests));
   app.use('/api/*', authMiddleware(config, deps));
 
   registerHealthRoute(app);
