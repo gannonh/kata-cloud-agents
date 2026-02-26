@@ -13,6 +13,7 @@ export function Sidebar() {
       <div className="p-4 border-b border-slate-800 flex items-center justify-between">
         {!collapsed && <span className="text-sm font-semibold text-slate-200">Kata Cloud Agents</span>}
         <button
+          type="button"
           onClick={toggleSidebar}
           className="text-slate-400 hover:text-slate-200"
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}

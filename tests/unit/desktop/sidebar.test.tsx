@@ -58,7 +58,8 @@ describe('Sidebar', () => {
     renderSidebar('/specs');
     const dashboardLink = screen.getByRole('link', { name: /dashboard/i });
     expect(dashboardLink.className).toContain('text-slate-400');
-    expect(dashboardLink.className).not.toContain('bg-slate-800');
+    expect(dashboardLink.className).not.toContain('bg-slate-800 text-white');
+    expect(dashboardLink.className).toContain('hover:bg-slate-800/50');
   });
 
   test('hides labels when collapsed', () => {
