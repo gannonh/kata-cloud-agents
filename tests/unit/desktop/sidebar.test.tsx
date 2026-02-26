@@ -1,9 +1,11 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
-import { describe, expect, test } from 'vitest';
+import { beforeEach, describe, expect, test } from 'vitest';
 
 import { Sidebar } from '../../../apps/desktop/src/components/Sidebar';
+import { useAppStore } from '../../../apps/desktop/src/store/app';
 
 function renderSidebar(initialEntry = '/') {
   return render(
@@ -14,6 +16,10 @@ function renderSidebar(initialEntry = '/') {
 }
 
 describe('Sidebar', () => {
+  beforeEach(() => {
+    useAppStore.setState({ sidebarCollapsed: false });
+  });
+
   test('renders app name', () => {
     renderSidebar();
     expect(screen.getByText('Kata Cloud Agents')).toBeInTheDocument();
@@ -46,5 +52,24 @@ describe('Sidebar', () => {
     const specsLink = screen.getByRole('link', { name: /specs/i });
     expect(specsLink.className).toContain('bg-slate-800');
     expect(specsLink.className).toContain('text-white');
+  });
+
+  test('hides labels when collapsed', () => {
+    useAppStore.setState({ sidebarCollapsed: true });
+    renderSidebar();
+    expect(screen.queryByText('Kata Cloud Agents')).not.toBeInTheDocument();
+    expect(screen.queryByText('Dashboard')).not.toBeInTheDocument();
+  });
+
+  test('toggle button collapses and expands sidebar', async () => {
+    const user = userEvent.setup();
+    renderSidebar();
+    expect(screen.getByText('Kata Cloud Agents')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /collapse sidebar/i }));
+    expect(screen.queryByText('Kata Cloud Agents')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /expand sidebar/i }));
+    expect(screen.getByText('Kata Cloud Agents')).toBeInTheDocument();
   });
 });
