@@ -8,6 +8,7 @@ import { Agents } from '../../../apps/desktop/src/pages/Agents';
 import { Artifacts } from '../../../apps/desktop/src/pages/Artifacts';
 import { Fleet } from '../../../apps/desktop/src/pages/Fleet';
 import { Settings } from '../../../apps/desktop/src/pages/Settings';
+import { NotFound } from '../../../apps/desktop/src/pages/NotFound';
 
 describe('placeholder pages', () => {
   test.each([
@@ -17,6 +18,7 @@ describe('placeholder pages', () => {
     ['Artifacts', Artifacts],
     ['Fleet', Fleet],
     ['Settings', Settings],
+    ['Page not found', NotFound],
   ])('%s page renders heading', (name, Component) => {
     render(<Component />);
     expect(screen.getByRole('heading', { name })).toBeInTheDocument();

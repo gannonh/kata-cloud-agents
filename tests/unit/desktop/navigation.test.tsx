@@ -10,33 +10,15 @@ describe('desktop app navigation', () => {
     expect(screen.getByRole('heading', { name: 'Dashboard' })).toBeInTheDocument();
   });
 
-  test('navigates to Specs page', () => {
+  test.each([
+    ['Specs'],
+    ['Agents'],
+    ['Artifacts'],
+    ['Fleet'],
+    ['Settings'],
+  ])('navigates to %s page', (name) => {
     render(<App />);
-    fireEvent.click(screen.getByRole('link', { name: /specs/i }));
-    expect(screen.getByRole('heading', { name: 'Specs' })).toBeInTheDocument();
-  });
-
-  test('navigates to Agents page', () => {
-    render(<App />);
-    fireEvent.click(screen.getByRole('link', { name: /agents/i }));
-    expect(screen.getByRole('heading', { name: 'Agents' })).toBeInTheDocument();
-  });
-
-  test('navigates to Artifacts page', () => {
-    render(<App />);
-    fireEvent.click(screen.getByRole('link', { name: /artifacts/i }));
-    expect(screen.getByRole('heading', { name: 'Artifacts' })).toBeInTheDocument();
-  });
-
-  test('navigates to Fleet page', () => {
-    render(<App />);
-    fireEvent.click(screen.getByRole('link', { name: /fleet/i }));
-    expect(screen.getByRole('heading', { name: 'Fleet' })).toBeInTheDocument();
-  });
-
-  test('navigates to Settings page', () => {
-    render(<App />);
-    fireEvent.click(screen.getByRole('link', { name: /settings/i }));
-    expect(screen.getByRole('heading', { name: 'Settings' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('link', { name: new RegExp(name, 'i') }));
+    expect(screen.getByRole('heading', { name })).toBeInTheDocument();
   });
 });

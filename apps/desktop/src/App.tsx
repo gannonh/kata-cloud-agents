@@ -1,24 +1,18 @@
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 
 import { Layout } from './components/Layout';
-import { Dashboard } from './pages/Dashboard';
-import { Specs } from './pages/Specs';
-import { Agents } from './pages/Agents';
-import { Artifacts } from './pages/Artifacts';
-import { Fleet } from './pages/Fleet';
-import { Settings } from './pages/Settings';
+import { NotFound } from './pages/NotFound';
+import { routes } from './routes';
 
 export function App() {
   return (
     <MemoryRouter>
       <Routes>
         <Route element={<Layout />}>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/specs" element={<Specs />} />
-          <Route path="/agents" element={<Agents />} />
-          <Route path="/artifacts" element={<Artifacts />} />
-          <Route path="/fleet" element={<Fleet />} />
-          <Route path="/settings" element={<Settings />} />
+          {routes.map((r) => (
+            <Route key={r.path} path={r.path} element={<r.component />} />
+          ))}
+          <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>
     </MemoryRouter>

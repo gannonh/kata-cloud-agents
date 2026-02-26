@@ -1,33 +1,8 @@
 import { NavLink } from 'react-router-dom';
-import {
-  LayoutDashboard,
-  FileText,
-  Bot,
-  Package,
-  Server,
-  Settings,
-  PanelLeftClose,
-  PanelLeftOpen,
-  type LucideIcon,
-} from 'lucide-react';
+import { PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 
 import { useAppStore } from '../store/app';
-
-interface NavItem {
-  path: string;
-  label: string;
-  icon: LucideIcon;
-  end?: boolean;
-}
-
-const navItems: NavItem[] = [
-  { path: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
-  { path: '/specs', label: 'Specs', icon: FileText },
-  { path: '/agents', label: 'Agents', icon: Bot },
-  { path: '/artifacts', label: 'Artifacts', icon: Package },
-  { path: '/fleet', label: 'Fleet', icon: Server },
-  { path: '/settings', label: 'Settings', icon: Settings },
-];
+import { routes } from '../routes';
 
 export function Sidebar() {
   const collapsed = useAppStore((s) => s.sidebarCollapsed);
@@ -46,7 +21,7 @@ export function Sidebar() {
         </button>
       </div>
       <div className="flex-1 py-2">
-        {navItems.map((item) => (
+        {routes.map((item) => (
           <NavLink
             key={item.path}
             to={item.path}

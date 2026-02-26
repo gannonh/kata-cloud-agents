@@ -13,7 +13,6 @@
     "tauri:build": "tauri build"
   },
   "dependencies": {
-    "@tauri-apps/plugin-fs": "^2.4.5",
     "lucide-react": "^0.575.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

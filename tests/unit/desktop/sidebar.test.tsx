@@ -54,6 +54,13 @@ describe('Sidebar', () => {
     expect(specsLink.className).toContain('text-white');
   });
 
+  test('inactive route gets default styling', () => {
+    renderSidebar('/specs');
+    const dashboardLink = screen.getByRole('link', { name: /dashboard/i });
+    expect(dashboardLink.className).toContain('text-slate-400');
+    expect(dashboardLink.className).not.toContain('bg-slate-800');
+  });
+
   test('hides labels when collapsed', () => {
     useAppStore.setState({ sidebarCollapsed: true });
     renderSidebar();

@@ -2,7 +2,9 @@
 
 fn main() {
     tauri::Builder::default()
-        .plugin(tauri_plugin_fs::init())
         .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .unwrap_or_else(|err| {
+            eprintln!("Fatal: failed to start Kata Cloud Agents: {err}");
+            std::process::exit(1);
+        });
 }
