@@ -4,3 +4,5 @@ export * from './agent.js';
 export * from './environment.js';
 export * from './task.js';
 export * from './artifact.js';
+export * from './agent-run.js';
+export * from './audit.js';
