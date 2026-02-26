@@ -13,7 +13,8 @@
     "build": "tsc --build",
     "lint": "eslint src/",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:docker": "KATA_DOCKER_E2E=1 vitest run src/__tests__/docker.integration.test.ts"
   },
   "dependencies": {
     "dockerode": "^4.0.9"
