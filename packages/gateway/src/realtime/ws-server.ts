@@ -219,7 +219,6 @@ export function createRealtimeWsServer(input: {
           return;
         }
 
-        const _exhaustive: never = command;
         ws.send(jsonEnvelope('error', { code: 'INVALID_COMMAND', message: 'Unsupported command type' }, input.deps.now));
       });
     });
