@@ -12,6 +12,8 @@
 
 Execution discipline references: `@test-driven-development`, `@verification-before-completion`, `@committing-changes`
 
+## Implementation Tasks
+
 ### Task 1: Root Workspace + Turbo Baseline
 
 **Files:**

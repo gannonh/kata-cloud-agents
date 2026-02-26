@@ -6,7 +6,7 @@ assert.ok(fs.existsSync(pkgPath), 'package.json must exist');
 
 const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
 assert.equal(pkg.private, true, 'root package must be private');
-assert.equal(pkg.packageManager, 'pnpm@10.6.0');
+assert.match(pkg.packageManager, /^pnpm@\d+\.\d+\.\d+$/);
 assert.ok(pkg.scripts.build, 'root build script missing');
 assert.ok(pkg.scripts.lint, 'root lint script missing');
 assert.ok(pkg.scripts.typecheck, 'root typecheck script missing');

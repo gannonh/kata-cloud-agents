@@ -8,9 +8,13 @@ const read = (path) => fs.readFileSync(new URL(path, root), 'utf8');
 const requiredFiles = [
   'apps/desktop/src-tauri/Cargo.toml',
   'apps/desktop/src-tauri/src/main.rs',
+  'apps/desktop/src-tauri/build.rs',
   'apps/desktop/src-tauri/tauri.conf.json',
   'apps/desktop/src/main.tsx',
   'apps/desktop/src/App.tsx',
+  'apps/desktop/index.html',
+  'apps/desktop/vite.config.ts',
+  'apps/desktop/tsconfig.json',
 ];
 
 for (const file of requiredFiles) {

@@ -29,6 +29,7 @@ const pkgNames = [
   ['apps/desktop/package.json', '@kata/desktop'],
   ['apps/web/package.json', '@kata/web'],
   ['apps/mobile/package.json', '@kata/mobile'],
+  ['packages/ui/package.json', '@kata/ui'],
   ['packages/shared/package.json', '@kata/shared'],
 ];
 
