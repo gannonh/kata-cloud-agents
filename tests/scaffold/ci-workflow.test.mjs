@@ -9,3 +9,6 @@ assert.match(workflow, /pnpm lint/, 'lint command missing');
 assert.match(workflow, /pnpm typecheck/, 'typecheck command missing');
 assert.match(workflow, /pnpm test/, 'test command missing');
 assert.match(workflow, /pnpm build/, 'build command missing');
+assert.match(workflow, /pnpm coverage/, 'coverage gate command missing');
+assert.match(workflow, /playwright install --with-deps chromium/, 'playwright browser install missing');
+assert.match(workflow, /pnpm test:e2e/, 'e2e command missing');

@@ -23,3 +23,9 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
+      - name: Coverage Gate (near-100%)
+        run: pnpm coverage
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+      - name: E2E smoke tests
+        run: pnpm test:e2e
