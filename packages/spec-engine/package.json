@@ -18,7 +18,8 @@
   "dependencies": {
     "@kata/shared": "workspace:*",
     "yaml": "^2.8.1",
-    "zod": "^4.3.6"
+    "zod": "^4.3.6",
+    "zod-to-json-schema": "^3.25.1"
   },
   "devDependencies": {
     "@types/node": "^22.13.10",

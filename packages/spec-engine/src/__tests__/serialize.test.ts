@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { serializeSpec, parseSpecYaml } from '../index.js';
+import type { Spec } from '@kata/shared';
 
-const spec = {
+const spec: Spec = {
   id: '550e8400-e29b-41d4-a716-446655440000',
   teamId: '550e8400-e29b-41d4-a716-446655440000',
   title: 'Canonical Test',
@@ -14,7 +15,7 @@ const spec = {
   decisions: [],
   blockers: [],
   createdBy: '550e8400-e29b-41d4-a716-446655440000',
-} as const;
+};
 
 describe('serializeSpec', () => {
   it('serializes deterministically for same input', () => {
