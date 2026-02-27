@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { parseSpecYaml, validateSpec } from '../parse.js';
 
 const validYaml = `
@@ -55,5 +55,22 @@ describe('parse + validate', () => {
     const result = validateSpec('nope');
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.issues.length).toBeGreaterThan(0);
+  });
+
+  it('rethrows internal validation exceptions', async () => {
+    vi.resetModules();
+    vi.doMock('../validate.js', () => ({
+      validateSpec: () => {
+        throw new Error('internal validation failure');
+      },
+    }));
+
+    try {
+      const { parseSpecYaml: parseWithThrowingValidate } = await import('../parse.js');
+      expect(() => parseWithThrowingValidate(validYaml)).toThrow('internal validation failure');
+    } finally {
+      vi.doUnmock('../validate.js');
+      vi.resetModules();
+    }
   });
 });

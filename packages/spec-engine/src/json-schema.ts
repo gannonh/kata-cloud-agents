@@ -1,5 +1,5 @@
-import { SpecSchema } from '@kata/shared';
 import { z } from 'zod';
+import { StrictSpecSchema } from './spec-schema.js';
 
 type JsonSchemaObject = {
   type?: string;
@@ -8,7 +8,6 @@ type JsonSchemaObject = {
 };
 
 let cached: JsonSchemaObject | null = null;
-const StrictSpecSchema = SpecSchema.strict();
 
 export function getSpecJsonSchema(): JsonSchemaObject {
   if (cached) return cached;

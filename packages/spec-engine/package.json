@@ -13,7 +13,7 @@
     "build": "tsc --build",
     "lint": "eslint src/",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "pnpm --filter @kata/shared build && vitest run"
   },
   "dependencies": {
     "@kata/shared": "workspace:*",
