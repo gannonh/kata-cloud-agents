@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, test } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
 
 import { Dashboard } from '../../../apps/desktop/src/pages/Dashboard';
 import { Specs } from '../../../apps/desktop/src/pages/Specs';
@@ -20,7 +21,11 @@ describe('placeholder pages', () => {
     ['Settings', Settings],
     ['Page not found', NotFound],
   ])('%s page renders heading', (name, Component) => {
-    render(<Component />);
+    render(
+      <MemoryRouter>
+        <Component />
+      </MemoryRouter>,
+    );
     expect(screen.getByRole('heading', { name })).toBeInTheDocument();
   });
 });

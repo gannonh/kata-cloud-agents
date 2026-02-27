@@ -24,7 +24,7 @@ export function createGatewayApp(config: GatewayConfig, deps: GatewayDeps) {
   app.use('/api/*', authMiddleware(config, deps));
 
   registerHealthRoute(app);
-  registerSpecsRoutes(app);
+  registerSpecsRoutes(app, deps);
   registerAgentsRoutes(app);
   registerTeamsRoutes(app);
   registerArtifactsRoutes(app);
