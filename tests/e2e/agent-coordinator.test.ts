@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -12,24 +12,24 @@ import {
 let workDir: string;
 let ctx: WorkspaceContext;
 
-test.beforeEach(async () => {
+beforeEach(async () => {
   workDir = await mkdtemp(join(tmpdir(), 'kata-e2e-'));
   ctx = { rootDir: workDir };
 });
 
-test.afterEach(async () => {
+afterEach(async () => {
   await rm(workDir, { recursive: true, force: true });
 });
 
-test.describe('Tool safety: path traversal', () => {
-  test('file_read rejects path traversal via ../', async () => {
+describe('Tool safety: path traversal', () => {
+  it('file_read rejects path traversal via ../', async () => {
     const tool = createFileReadTool(ctx);
     const result = await tool.execute({ path: '../../../etc/passwd' });
     expect(result.isError).toBe(true);
     expect(result.content).toMatch(/outside workspace/i);
   });
 
-  test('file_write rejects path traversal', async () => {
+  it('file_write rejects path traversal', async () => {
     const tool = createFileWriteTool(ctx);
     const result = await tool.execute({
       path: '../../../tmp/malicious.txt',
@@ -39,29 +39,29 @@ test.describe('Tool safety: path traversal', () => {
     expect(result.content).toMatch(/outside workspace/i);
   });
 
-  test('file_read rejects absolute path outside workspace', async () => {
+  it('file_read rejects absolute path outside workspace', async () => {
     const tool = createFileReadTool(ctx);
     const result = await tool.execute({ path: '/etc/passwd' });
     expect(result.isError).toBe(true);
   });
 });
 
-test.describe('Tool safety: shell_exec', () => {
-  test('uses workspace as cwd by default', async () => {
+describe('Tool safety: shell_exec', () => {
+  it('uses workspace as cwd by default', async () => {
     const tool = createShellExecTool(ctx);
     const result = await tool.execute({ command: 'pwd' });
     expect(result.content.trim()).toBe(workDir);
   });
 
-  test('respects timeout for long-running commands', async () => {
+  it('respects timeout for long-running commands', async () => {
     const tool = createShellExecTool(ctx);
     const result = await tool.execute({ command: 'sleep 30', timeout: 500 });
     expect(result.isError).toBe(true);
   });
 });
 
-test.describe('Tool safety: oversized output', () => {
-  test('file_read handles large files', async () => {
+describe('Tool safety: oversized output', () => {
+  it('file_read handles large files', async () => {
     const largeContent = 'x'.repeat(200_000);
     await writeFile(join(workDir, 'large.txt'), largeContent);
 
@@ -72,10 +72,10 @@ test.describe('Tool safety: oversized output', () => {
   });
 });
 
-test.describe('Live LLM', () => {
-  test.skip(!process.env.ANTHROPIC_API_KEY, 'requires ANTHROPIC_API_KEY');
+describe('Live LLM', () => {
+  const liveTest = process.env.ANTHROPIC_API_KEY ? it : it.skip;
 
-  test(
+  liveTest(
     'coordinator decomposes a trivial spec into tasks',
     async () => {
       const { runCoordinator } = await import('../../agents/coordinator/src/index.ts');
