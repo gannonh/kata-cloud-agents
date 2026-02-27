@@ -12,10 +12,9 @@ vi.mock('@mariozechner/pi-ai', () => ({
 }));
 
 import { createLLMAdapter } from '../llm/adapter.js';
-import { completeSimple, streamSimple } from '@mariozechner/pi-ai';
+import { completeSimple } from '@mariozechner/pi-ai';
 
 const mockCompleteSimple = vi.mocked(completeSimple);
-const mockStreamSimple = vi.mocked(streamSimple);
 
 function makeAssistantMessage(overrides: Record<string, unknown> = {}) {
   return {

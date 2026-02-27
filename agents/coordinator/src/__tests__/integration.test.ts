@@ -69,7 +69,7 @@ describe('integration: full lifecycle', () => {
   it('plans tasks then executor creates files', async () => {
     let callCount = 0;
     const mockAdapter = {
-      complete: vi.fn(async (_systemPrompt: string, _messages: unknown[]) => {
+      complete: vi.fn(async () => {
         callCount++;
         if (callCount === 1) {
           // Coordinator planning: return task list

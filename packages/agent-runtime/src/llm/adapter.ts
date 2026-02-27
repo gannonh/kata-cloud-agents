@@ -111,7 +111,10 @@ export function createLLMAdapter(config: {
   temperature?: number;
   maxTokens?: number;
 }): LLMAdapter {
-  const model = getModel(config.provider, config.model);
+  const model = getModel(
+    config.provider as Parameters<typeof getModel>[0],
+    config.model as Parameters<typeof getModel>[1],
+  );
 
   return {
     async complete(systemPrompt, messages, tools, signal) {
