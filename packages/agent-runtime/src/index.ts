@@ -10,3 +10,4 @@ export {
   createGitCommitTool,
   createGitDiffTool,
 } from './tools/index.js';
+export { agentLoop } from './loop.js';
