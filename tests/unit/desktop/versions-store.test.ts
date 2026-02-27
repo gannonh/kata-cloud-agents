@@ -78,6 +78,26 @@ describe('useVersionStore', () => {
     expect(useVersionStore.getState().selectedVersion).toEqual(version);
   });
 
+  it('fetchVersion stores error and clears loading when request fails', async () => {
+    const specId = 'spec-1';
+    mockFetch.mockResolvedValueOnce({ ok: false, status: 404, json: async () => ({}) });
+
+    await useVersionStore.getState().fetchVersion(specId, 2);
+    const state = useVersionStore.getState();
+    expect(state.loading).toBe(false);
+    expect(state.error).toBe('Request failed with status 404');
+  });
+
+  it('fetchVersion stores fallback error message for non-Error throws', async () => {
+    const specId = 'spec-1';
+    mockFetch.mockRejectedValueOnce('boom');
+
+    await useVersionStore.getState().fetchVersion(specId, 2);
+    const state = useVersionStore.getState();
+    expect(state.loading).toBe(false);
+    expect(state.error).toBe('Unexpected error');
+  });
+
   it('restoreVersion calls POST and refreshes list', async () => {
     const specId = 'spec-1';
     mockFetch
@@ -105,6 +125,57 @@ describe('useVersionStore', () => {
     const state = useVersionStore.getState();
     expect(state.loading).toBe(false);
     expect(state.error).toBe('Request failed with status 500');
+  });
+
+  it('fetchDiff stores error for active request and clears loading', async () => {
+    const specId = 'spec-1';
+    mockFetch.mockResolvedValueOnce({ ok: false, status: 502, json: async () => ({}) });
+
+    await useVersionStore.getState().fetchDiff(specId, 1, 2);
+    const state = useVersionStore.getState();
+    expect(state.loading).toBe(false);
+    expect(state.error).toBe('Request failed with status 502');
+  });
+
+  it('restoreVersion stores error and clears loading when POST fails', async () => {
+    const specId = 'spec-1';
+    mockFetch.mockResolvedValueOnce({ ok: false, status: 503, json: async () => ({}) });
+
+    await useVersionStore.getState().restoreVersion(specId, 1);
+    const state = useVersionStore.getState();
+    expect(state.loading).toBe(false);
+    expect(state.error).toBe('Request failed with status 503');
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('ignores stale diff errors from older requests', async () => {
+    const specId = 'spec-1';
+    let resolveFirst: (() => void) | null = null;
+    let resolveSecond: (() => void) | null = null;
+
+    mockFetch
+      .mockReturnValueOnce(new Promise((resolve) => {
+        resolveFirst = () => resolve({ ok: false, status: 500, json: async () => ({}) });
+      }))
+      .mockReturnValueOnce(new Promise((resolve) => {
+        resolveSecond = () => resolve({
+          ok: true,
+          json: async () => [{ path: 'title', type: 'changed', oldValue: 'new', newValue: 'latest' }],
+        });
+      }));
+
+    const first = useVersionStore.getState().fetchDiff(specId, 1, 2);
+    const second = useVersionStore.getState().fetchDiff(specId, 2, 3);
+
+    resolveFirst?.();
+    await first;
+    expect(useVersionStore.getState().error).toBeNull();
+
+    resolveSecond?.();
+    await second;
+    expect(useVersionStore.getState().diffResult).toEqual([
+      { path: 'title', type: 'changed', oldValue: 'new', newValue: 'latest' },
+    ]);
   });
 
   it('ignores stale diff responses and keeps latest diff', async () => {
