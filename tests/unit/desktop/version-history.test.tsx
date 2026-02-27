@@ -84,6 +84,72 @@ describe('VersionHistory', () => {
     expect(onRestore).toHaveBeenCalledWith(2);
   });
 
+  it('calls onCompare for non-latest versions', () => {
+    const onCompare = vi.fn();
+    render(
+      <VersionHistory
+        versions={mockVersions}
+        onSelectVersion={() => {}}
+        onCompare={onCompare}
+        onRestore={() => {}}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Compare' }));
+    expect(onCompare).toHaveBeenCalledWith(1, 2);
+  });
+
+  it('renders fallback summary and day-based relative time', () => {
+    const now = new Date('2026-03-01T12:00:00Z');
+    vi.useFakeTimers();
+    vi.setSystemTime(now);
+    render(
+      <VersionHistory
+        versions={[{
+          ...mockVersions[0],
+          id: 'v4',
+          versionNumber: 4,
+          changeSummary: '',
+          createdAt: '2026-02-27T12:00:00Z',
+        }]}
+        onSelectVersion={() => {}}
+        onCompare={() => {}}
+        onRestore={() => {}}
+      />,
+    );
+    expect(screen.getByText('No summary')).toBeInTheDocument();
+    expect(screen.getByText('2d ago')).toBeInTheDocument();
+    vi.useRealTimers();
+  });
+
+  it('renders minute and just-now relative time labels', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-03-01T12:00:00Z'));
+    render(
+      <VersionHistory
+        versions={[
+          {
+            ...mockVersions[0],
+            id: 'v5',
+            versionNumber: 5,
+            createdAt: '2026-03-01T11:30:00Z',
+          },
+          {
+            ...mockVersions[1],
+            id: 'v6',
+            versionNumber: 6,
+            createdAt: '2026-03-01T12:00:00Z',
+          },
+        ]}
+        onSelectVersion={() => {}}
+        onCompare={() => {}}
+        onRestore={() => {}}
+      />,
+    );
+    expect(screen.getByText('30m ago')).toBeInTheDocument();
+    expect(screen.getByText('just now')).toBeInTheDocument();
+    vi.useRealTimers();
+  });
+
   it('renders empty state when no versions', () => {
     render(
       <VersionHistory

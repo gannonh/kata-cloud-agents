@@ -27,24 +27,21 @@ export function SpecDetail() {
     return () => reset();
   }, [specId, fetchVersions, reset]);
 
+  if (!specId) return null;
+
   const handleCompare = (v1: number, v2: number) => {
-    if (!specId) return;
     setDiffRange({ from: v1, to: v2 });
     void fetchDiff(specId, v1, v2);
   };
 
   const handleRestore = async (versionNumber: number) => {
-    if (!specId) return;
     await restoreVersion(specId, versionNumber);
     setDiffRange(null);
   };
 
   const handleSelectVersion = (versionNumber: number) => {
-    if (!specId) return;
     void fetchVersion(specId, versionNumber);
   };
-
-  if (!specId) return null;
 
   return (
     <div className="flex h-full">

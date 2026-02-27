@@ -54,6 +54,25 @@ describe('useVersionStore', () => {
     expect(useVersionStore.getState().diffResult).toEqual(diffEntries);
   });
 
+  it('fetchVersion populates selectedVersion', async () => {
+    const specId = 'spec-1';
+    const version = {
+      id: 'v2',
+      specId,
+      versionNumber: 2,
+      content: {},
+      actorId: 'agent-1',
+      actorType: 'agent' as const,
+      changeSummary: 'Second version',
+      createdAt: '2026-01-02T00:00:00Z',
+    };
+    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => version });
+
+    await useVersionStore.getState().fetchVersion(specId, 2);
+    expect(mockFetch).toHaveBeenCalledWith('/api/specs/spec-1/versions/2');
+    expect(useVersionStore.getState().selectedVersion).toEqual(version);
+  });
+
   it('restoreVersion calls POST and refreshes list', async () => {
     const specId = 'spec-1';
     mockFetch
