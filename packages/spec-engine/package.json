@@ -3,10 +3,27 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
   "scripts": {
-    "build": "node -e \"console.log('build not implemented yet')\"",
-    "lint": "node -e \"console.log('lint not implemented yet')\"",
-    "typecheck": "node -e \"console.log('typecheck not implemented yet')\"",
-    "test": "node -e \"console.log('tests not implemented yet')\""
+    "build": "tsc --build",
+    "lint": "eslint src/",
+    "typecheck": "tsc --noEmit",
+    "test": "pnpm --filter @kata/shared build && vitest run"
+  },
+  "dependencies": {
+    "@kata/shared": "workspace:*",
+    "yaml": "^2.8.1",
+    "zod": "^4.3.6",
+    "zod-to-json-schema": "^3.25.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "typescript": "^5.8.2",
+    "vitest": "^3.2.4"
   }
 }

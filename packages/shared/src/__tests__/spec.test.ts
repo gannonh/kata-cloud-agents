@@ -12,8 +12,14 @@ const now = '2026-01-01T00:00:00.000Z';
 
 describe('SpecStatusSchema', () => {
   it('accepts all valid statuses', () => {
-    for (const s of ['draft', 'active', 'paused', 'completed', 'archived']) {
+    for (const s of ['draft', 'approved', 'in_progress', 'verifying', 'done', 'failed']) {
       expect(SpecStatusSchema.parse(s)).toBe(s);
+    }
+  });
+
+  it('rejects legacy status values', () => {
+    for (const s of ['active', 'paused', 'completed', 'archived']) {
+      expect(() => SpecStatusSchema.parse(s)).toThrow();
     }
   });
 
@@ -116,6 +122,15 @@ describe('SpecSchema', () => {
   it('rejects empty verification criteria item', () => {
     expect(() =>
       SpecSchema.parse({ ...validSpec, verification: { criteria: [''] } }),
+    ).toThrow();
+  });
+
+  it('rejects unknown fields in nested objects', () => {
+    expect(() =>
+      SpecSchema.parse({
+        ...validSpec,
+        meta: { ...validSpec.meta, extraField: 'unexpected' },
+      }),
     ).toThrow();
   });
 
