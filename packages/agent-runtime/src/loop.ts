@@ -1,6 +1,6 @@
 import type { LLMAdapter } from './llm/adapter.js';
 import type { ToolRegistry } from './tools/registry.js';
-import type { AgentEvent, LoopConfig, TokenUsage } from './types.js';
+import type { AgentEvent, LoopConfig, LLMResponse, TokenUsage, ToolResult } from './types.js';
 
 const DEFAULT_MAX_TURNS = 25;
 
@@ -52,7 +52,7 @@ export async function* agentLoop(
     yield { type: 'turn_start', turnNumber: turn };
     yield { type: 'llm_start', model: config.modelConfig.model };
 
-    let response;
+    let response: LLMResponse;
     try {
       response = await adapter.complete(
         config.systemPrompt,
@@ -80,7 +80,7 @@ export async function* agentLoop(
     for (const toolCall of response.toolCalls) {
       yield { type: 'tool_call', toolName: toolCall.name, params: toolCall.arguments };
 
-      let result;
+      let result: ToolResult;
       try {
         result = await registry.execute(toolCall.name, toolCall.arguments, config.signal);
       } catch (err) {
