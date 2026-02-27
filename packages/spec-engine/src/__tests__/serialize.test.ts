@@ -24,9 +24,25 @@ describe('serializeSpec', () => {
     expect(a).toBe(b);
   });
 
+  it('serializes deterministically regardless of nested key insertion order', () => {
+    const withTestPlan: Spec = {
+      ...spec,
+      verification: { criteria: ['B'], testPlan: 'run tests' },
+      meta: { version: 1, createdAt: '2026-02-26T00:00:00.000Z', updatedAt: '2026-02-26T00:00:00.000Z' },
+    };
+    const reordered: Spec = {
+      ...withTestPlan,
+      verification: { testPlan: 'run tests', criteria: ['B'] },
+      meta: { updatedAt: '2026-02-26T00:00:00.000Z', createdAt: '2026-02-26T00:00:00.000Z', version: 1 },
+    };
+
+    expect(serializeSpec(withTestPlan)).toBe(serializeSpec(reordered));
+  });
+
   it('round-trips through parse', () => {
     const yaml = serializeSpec(spec);
     const parsed = parseSpecYaml(yaml);
     expect(parsed.ok).toBe(true);
+    if (parsed.ok) expect(parsed.value).toEqual(spec);
   });
 });

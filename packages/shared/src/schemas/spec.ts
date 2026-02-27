@@ -9,6 +9,7 @@ export const SpecMetaSchema = z
     createdAt: z.string().datetime(),
     updatedAt: z.string().datetime(),
   })
+  .strict()
   .refine((m) => m.updatedAt >= m.createdAt, {
     message: 'updatedAt must be at or after createdAt',
   });
@@ -20,7 +21,7 @@ export const SpecDecisionSchema = z.object({
   decidedBy: z.string().min(1),
   decidedAt: z.string().datetime(),
   rationale: z.string().min(1).optional(),
-});
+}).strict();
 export type SpecDecision = z.infer<typeof SpecDecisionSchema>;
 
 export const SpecBlockerStatusSchema = z.enum(['open', 'resolved']);
@@ -34,6 +35,7 @@ export const SpecBlockerSchema = z
     reportedAt: z.string().datetime(),
     resolvedAt: z.string().datetime().optional(),
   })
+  .strict()
   .refine((b) => b.status !== 'resolved' || b.resolvedAt !== undefined, {
     message: 'resolved blockers must have resolvedAt',
   })
@@ -45,7 +47,7 @@ export type SpecBlocker = z.infer<typeof SpecBlockerSchema>;
 export const SpecVerificationSchema = z.object({
   criteria: z.array(z.string().min(1)),
   testPlan: z.string().optional(),
-});
+}).strict();
 export type SpecVerification = z.infer<typeof SpecVerificationSchema>;
 
 export const SpecSchema = z.object({

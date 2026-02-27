@@ -32,15 +32,28 @@ describe('parse + validate', () => {
     const withUnknown = `${validYaml}\nextraField: nope\n`;
     const parsed = parseSpecYaml(withUnknown);
     expect(parsed.ok).toBe(false);
+    if (!parsed.ok) expect(parsed.kind).toBe('validation');
+  });
+
+  it('rejects unknown nested fields', () => {
+    const withUnknownNested = validYaml.replace(
+      'verification:\n  criteria:\n    - Unit tests pass\n',
+      'verification:\n  criteria:\n    - Unit tests pass\n  extraNestedField: nope\n',
+    );
+    const parsed = parseSpecYaml(withUnknownNested);
+    expect(parsed.ok).toBe(false);
+    if (!parsed.ok) expect(parsed.kind).toBe('validation');
   });
 
   it('rejects malformed yaml', () => {
     const parsed = parseSpecYaml('meta: [');
     expect(parsed.ok).toBe(false);
+    if (!parsed.ok) expect(parsed.kind).toBe('parse');
   });
 
   it('validateSpec rejects non-object input', () => {
     const result = validateSpec('nope');
     expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.issues.length).toBeGreaterThan(0);
   });
 });

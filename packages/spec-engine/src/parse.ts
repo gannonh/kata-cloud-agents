@@ -4,11 +4,12 @@ import { validateSpec } from './validate.js';
 
 export type ParseResult<T> =
   | { ok: true; value: T }
+  | { ok: false; kind: 'parse'; message: string }
   | {
       ok: false;
-      kind: 'parse' | 'validation';
+      kind: 'validation';
       message: string;
-      issues?: Array<{ path: string; message: string; code: string }>;
+      issues: Array<{ path: string; message: string; code: string }>;
     };
 
 export function parseSpecYaml(input: string): ParseResult<Spec> {

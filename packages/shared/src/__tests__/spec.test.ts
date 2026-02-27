@@ -125,6 +125,15 @@ describe('SpecSchema', () => {
     ).toThrow();
   });
 
+  it('rejects unknown fields in nested objects', () => {
+    expect(() =>
+      SpecSchema.parse({
+        ...validSpec,
+        meta: { ...validSpec.meta, extraField: 'unexpected' },
+      }),
+    ).toThrow();
+  });
+
   it('rejects empty rationale in decision', () => {
     const d = { id: uuid, description: 'Use Zod', decidedBy: 'arch', decidedAt: now, rationale: '' };
     expect(() => SpecDecisionSchema.parse(d)).toThrow();
