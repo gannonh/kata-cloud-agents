@@ -4,6 +4,7 @@ import {
   specStatusEnum,
   agentRunStatusEnum,
   taskStatusEnum,
+  actorTypeEnum,
   users,
   teams,
   teamMembers,
@@ -22,6 +23,7 @@ describe('db enums', () => {
     expect(specStatusEnum.enumValues).toEqual(['draft', 'approved', 'in_progress', 'verifying', 'done', 'failed']);
     expect(agentRunStatusEnum.enumValues).toEqual(['queued', 'running', 'completed', 'failed', 'cancelled']);
     expect(taskStatusEnum.enumValues).toEqual(['pending', 'assigned', 'running', 'completed', 'failed', 'skipped']);
+    expect(actorTypeEnum.enumValues).toEqual(['user', 'agent']);
   });
 });
 
@@ -49,7 +51,16 @@ describe('table exports', () => {
       expect.arrayContaining(['id', 'teamId', 'title', 'content', 'status', 'createdBy', 'createdAt', 'updatedAt']),
     );
     expect(cols(specVersions)).toEqual(
-      expect.arrayContaining(['id', 'specId', 'versionNumber', 'content', 'createdAt']),
+      expect.arrayContaining([
+        'id',
+        'specId',
+        'versionNumber',
+        'content',
+        'actorId',
+        'actorType',
+        'changeSummary',
+        'createdAt',
+      ]),
     );
     expect(cols(agentRuns)).toEqual(
       expect.arrayContaining(['id', 'specId', 'agentRole', 'status', 'environmentId', 'model', 'startedAt', 'completedAt']),
