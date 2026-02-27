@@ -5,15 +5,15 @@
   "type": "module",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
+      "types": "./src/index.ts",
       "import": "./dist/index.js"
     },
     "./schema": {
-      "types": "./dist/schema.d.ts",
+      "types": "./src/schema.ts",
       "import": "./dist/schema.js"
     },
     "./client": {
-      "types": "./dist/client.d.ts",
+      "types": "./src/client.ts",
       "import": "./dist/client.js"
     }
   },
