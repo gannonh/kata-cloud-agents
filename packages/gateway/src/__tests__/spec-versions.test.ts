@@ -18,14 +18,17 @@ function makeConfig() {
 
 const specId = '00000000-0000-4000-8000-000000000001';
 const actorId = '00000000-0000-4000-8000-000000000002';
+const apiKeyId = '00000000-0000-4000-8000-0000000000aa';
 const teamId = 'team-1';
 
 function makeVersionStore(overrides: Partial<VersionStoreAdapter> = {}): VersionStoreAdapter {
+  let nextVersionNumber = 0;
   return {
     getSpec: vi.fn(async () => ({ id: specId, teamId, content: { title: 'test' } })),
     updateSpecContent: vi.fn(async () => {}),
     createVersion: vi.fn(async (data) => ({
       id: '00000000-0000-4000-8000-000000000099',
+      versionNumber: ++nextVersionNumber,
       ...data,
       createdAt: new Date('2026-02-27T00:00:00.000Z'),
     })),
@@ -43,7 +46,6 @@ function makeVersionStore(overrides: Partial<VersionStoreAdapter> = {}): Version
       items: [],
       total: 0,
     })),
-    getMaxVersionNumber: vi.fn(async () => 0),
     ...overrides,
   };
 }
@@ -52,7 +54,7 @@ function makeDeps(overrides = {}) {
   return {
     logger: { info: () => {}, error: () => {} },
     apiKeyAuth: {
-      validateApiKey: vi.fn(async () => ({ teamId, keyId: 'key-1' })),
+      validateApiKey: vi.fn(async () => ({ teamId, keyId: apiKeyId })),
     },
     sessionStore: { getSession: vi.fn(async () => null) },
     versionStore: makeVersionStore(),
@@ -204,7 +206,12 @@ describe('POST /api/specs/:specId/versions/:versionNumber/restore', () => {
         changeSummary: 'First',
         createdAt: new Date(),
       })),
-      getMaxVersionNumber: vi.fn(async () => 3),
+      createVersion: vi.fn(async (data) => ({
+        id: '00000000-0000-4000-8000-000000000199',
+        versionNumber: 4,
+        ...data,
+        createdAt: new Date('2026-02-27T00:00:00.000Z'),
+      })),
     });
     const app = createGatewayApp(makeConfig(), makeDeps({ versionStore: store }));
     const res = await app.request(
@@ -214,6 +221,13 @@ describe('POST /api/specs/:specId/versions/:versionNumber/restore', () => {
     const body = await res.json();
     expect(body.versionNumber).toBe(4);
     expect(body.changeSummary).toBe('Restored from version 1');
+    expect(store.createVersion).toHaveBeenCalledWith({
+      specId,
+      content: { title: 'original' },
+      actorId: apiKeyId,
+      actorType: 'agent',
+      changeSummary: 'Restored from version 1',
+    });
   });
 
   it('returns 404 for nonexistent version', async () => {

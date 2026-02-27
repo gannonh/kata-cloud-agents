@@ -1,12 +1,16 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useVersionStore } from '../../../apps/desktop/src/store/versions';
 
 const mockFetch = vi.fn();
-global.fetch = mockFetch as unknown as typeof fetch;
 
 beforeEach(() => {
+  vi.stubGlobal('fetch', mockFetch);
   useVersionStore.getState().reset();
   mockFetch.mockReset();
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
 });
 
 describe('useVersionStore', () => {
@@ -15,6 +19,7 @@ describe('useVersionStore', () => {
     expect(state.versions).toEqual([]);
     expect(state.total).toBe(0);
     expect(state.loading).toBe(false);
+    expect(state.error).toBeNull();
     expect(state.selectedVersion).toBeNull();
     expect(state.diffResult).toBeNull();
   });
@@ -81,5 +86,59 @@ describe('useVersionStore', () => {
 
     await useVersionStore.getState().restoreVersion(specId, 1);
     expect(mockFetch).toHaveBeenCalledTimes(2);
+    expect(mockFetch).toHaveBeenNthCalledWith(
+      1,
+      `/api/specs/${specId}/versions/1/restore`,
+      { method: 'POST' },
+    );
+    expect(mockFetch).toHaveBeenNthCalledWith(
+      2,
+      `/api/specs/${specId}/versions?limit=50&offset=0`,
+    );
+  });
+
+  it('stores errors and always clears loading on non-ok responses', async () => {
+    const specId = 'spec-1';
+    mockFetch.mockResolvedValueOnce({ ok: false, status: 500, json: async () => ({}) });
+
+    await useVersionStore.getState().fetchVersions(specId);
+    const state = useVersionStore.getState();
+    expect(state.loading).toBe(false);
+    expect(state.error).toBe('Request failed with status 500');
+  });
+
+  it('ignores stale diff responses and keeps latest diff', async () => {
+    const specId = 'spec-1';
+    let resolveFirst: (() => void) | null = null;
+    let resolveSecond: (() => void) | null = null;
+
+    mockFetch
+      .mockReturnValueOnce(new Promise((resolve) => {
+        resolveFirst = () => resolve({
+          ok: true,
+          json: async () => [{ path: 'title', type: 'changed', oldValue: 'first', newValue: 'old' }],
+        });
+      }))
+      .mockReturnValueOnce(new Promise((resolve) => {
+        resolveSecond = () => resolve({
+          ok: true,
+          json: async () => [{ path: 'title', type: 'changed', oldValue: 'new', newValue: 'latest' }],
+        });
+      }));
+
+    const first = useVersionStore.getState().fetchDiff(specId, 1, 2);
+    const second = useVersionStore.getState().fetchDiff(specId, 2, 3);
+
+    resolveSecond?.();
+    await second;
+    expect(useVersionStore.getState().diffResult).toEqual([
+      { path: 'title', type: 'changed', oldValue: 'new', newValue: 'latest' },
+    ]);
+
+    resolveFirst?.();
+    await first;
+    expect(useVersionStore.getState().diffResult).toEqual([
+      { path: 'title', type: 'changed', oldValue: 'new', newValue: 'latest' },
+    ]);
   });
 });

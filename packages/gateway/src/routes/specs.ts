@@ -17,8 +17,8 @@ const SpecVersionSchema = z.object({
   id: z.string().uuid(),
   specId: z.string().uuid(),
   versionNumber: z.number().int().positive(),
-  content: z.record(z.unknown()),
-  actorId: z.string(),
+  content: z.record(z.string(), z.unknown()),
+  actorId: z.string().uuid(),
   actorType: z.enum(['user', 'agent']),
   changeSummary: z.string(),
   createdAt: z.string().datetime(),
@@ -37,7 +37,7 @@ const VersionListResponseSchema = z.object({
 });
 
 const CreateVersionBodySchema = z.object({
-  content: z.record(z.unknown()),
+  content: z.record(z.string(), z.unknown()),
   changeSummary: z.string().default(''),
 });
 
@@ -217,10 +217,6 @@ const restoreVersionRoute = createRoute({
   },
 });
 
-function normalizeActorType(value: string): 'user' | 'agent' {
-  return value === 'agent' ? 'agent' : 'user';
-}
-
 function toVersionResponse(version: VersionStoreVersionRecord) {
   return {
     id: version.id,
@@ -228,7 +224,7 @@ function toVersionResponse(version: VersionStoreVersionRecord) {
     versionNumber: version.versionNumber,
     content: version.content,
     actorId: version.actorId,
-    actorType: normalizeActorType(version.actorType),
+    actorType: version.actorType,
     changeSummary: version.changeSummary,
     createdAt: version.createdAt.toISOString(),
   };
@@ -265,10 +261,8 @@ export function registerSpecsRoutes(app: OpenAPIHono<GatewayEnv>, deps: GatewayD
     const actor = resolveActor(principal);
     if (!actor) return jsonError(c, 401, 'AUTH_REQUIRED', 'Authentication required');
 
-    const versionNumber = (await store.getMaxVersionNumber(specId)) + 1;
     const created = await store.createVersion({
       specId,
-      versionNumber,
       content,
       actorId: actor.actorId,
       actorType: actor.actorType,
@@ -377,10 +371,8 @@ export function registerSpecsRoutes(app: OpenAPIHono<GatewayEnv>, deps: GatewayD
     const actor = resolveActor(principal);
     if (!actor) return jsonError(c, 401, 'AUTH_REQUIRED', 'Authentication required');
 
-    const nextVersion = (await store.getMaxVersionNumber(specId)) + 1;
     const restored = await store.createVersion({
       specId,
-      versionNumber: nextVersion,
       content: sourceVersion.content,
       actorId: actor.actorId,
       actorType: actor.actorType,

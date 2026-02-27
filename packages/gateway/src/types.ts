@@ -66,13 +66,15 @@ export type ChannelAccessAdapter = {
   resolveAgentTeamId: (agentId: string) => Promise<string | null>;
 };
 
+export type ActorType = 'user' | 'agent';
+
 export type VersionStoreVersionRecord = {
   id: string;
   specId: string;
   versionNumber: number;
   content: Record<string, unknown>;
   actorId: string;
-  actorType: string;
+  actorType: ActorType;
   changeSummary: string;
   createdAt: Date;
 };
@@ -82,15 +84,13 @@ export type VersionStoreAdapter = {
   updateSpecContent: (specId: string, content: Record<string, unknown>) => Promise<void>;
   createVersion: (data: {
     specId: string;
-    versionNumber: number;
     content: Record<string, unknown>;
     actorId: string;
-    actorType: 'user' | 'agent';
+    actorType: ActorType;
     changeSummary: string;
   }) => Promise<VersionStoreVersionRecord>;
   getVersion: (specId: string, versionNumber: number) => Promise<VersionStoreVersionRecord | null>;
   listVersions: (specId: string, limit: number, offset: number) => Promise<{ items: VersionStoreVersionRecord[]; total: number }>;
-  getMaxVersionNumber: (specId: string) => Promise<number>;
 };
 
 export type GatewayConfig = {

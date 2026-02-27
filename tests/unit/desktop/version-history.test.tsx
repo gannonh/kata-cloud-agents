@@ -150,6 +150,35 @@ describe('VersionHistory', () => {
     vi.useRealTimers();
   });
 
+  it('guards invalid and future timestamps', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-03-01T12:00:00Z'));
+    render(
+      <VersionHistory
+        versions={[
+          {
+            ...mockVersions[0],
+            id: 'v7',
+            versionNumber: 7,
+            createdAt: 'not-a-date',
+          },
+          {
+            ...mockVersions[1],
+            id: 'v8',
+            versionNumber: 8,
+            createdAt: '2026-03-01T12:05:00Z',
+          },
+        ]}
+        onSelectVersion={() => {}}
+        onCompare={() => {}}
+        onRestore={() => {}}
+      />,
+    );
+    expect(screen.getByText('unknown time')).toBeInTheDocument();
+    expect(screen.getByText('just now')).toBeInTheDocument();
+    vi.useRealTimers();
+  });
+
   it('renders empty state when no versions', () => {
     render(
       <VersionHistory

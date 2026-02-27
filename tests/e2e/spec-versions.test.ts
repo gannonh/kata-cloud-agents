@@ -3,6 +3,7 @@ import { createGatewayApp } from '../../packages/gateway/src/app.js';
 import type { VersionStoreAdapter } from '../../packages/gateway/src/types.js';
 
 const specId = '00000000-0000-4000-8000-000000000001';
+const apiKeyId = '00000000-0000-4000-8000-0000000000aa';
 const teamId = 'team-1';
 
 function makeConfig() {
@@ -26,7 +27,7 @@ function createInMemoryVersionStore(): VersionStoreAdapter {
     versionNumber: number;
     content: Record<string, unknown>;
     actorId: string;
-    actorType: string;
+    actorType: 'user' | 'agent';
     changeSummary: string;
     createdAt: Date;
   }> = [];
@@ -39,8 +40,13 @@ function createInMemoryVersionStore(): VersionStoreAdapter {
       specContent = content;
     },
     createVersion: async (data) => {
+      const scoped = versions.filter((v) => v.specId === data.specId);
+      const versionNumber = scoped.length === 0
+        ? 1
+        : Math.max(...scoped.map((v) => v.versionNumber)) + 1;
       const version = {
         id: `version-${++idCounter}`,
+        versionNumber,
         ...data,
         createdAt: new Date(),
       };
@@ -48,16 +54,17 @@ function createInMemoryVersionStore(): VersionStoreAdapter {
       specContent = data.content;
       return version;
     },
-    getVersion: async (_specId, versionNumber) =>
-      versions.find((v) => v.versionNumber === versionNumber) ?? null,
-    listVersions: async (_specId, limit, offset) => ({
-      items: [...versions]
-        .sort((a, b) => b.versionNumber - a.versionNumber)
-        .slice(offset, offset + limit),
-      total: versions.length,
-    }),
-    getMaxVersionNumber: async () =>
-      (versions.length === 0 ? 0 : Math.max(...versions.map((v) => v.versionNumber))),
+    getVersion: async (targetSpecId, versionNumber) =>
+      versions.find((v) => v.specId === targetSpecId && v.versionNumber === versionNumber) ?? null,
+    listVersions: async (targetSpecId, limit, offset) => {
+      const scoped = versions.filter((v) => v.specId === targetSpecId);
+      return {
+        items: [...scoped]
+          .sort((a, b) => b.versionNumber - a.versionNumber)
+          .slice(offset, offset + limit),
+        total: scoped.length,
+      };
+    },
   };
 }
 
@@ -65,7 +72,7 @@ function makeDeps(versionStore: VersionStoreAdapter) {
   return {
     logger: { info: () => {}, error: () => {} },
     apiKeyAuth: {
-      validateApiKey: vi.fn(async () => ({ teamId, keyId: 'key-1' })),
+      validateApiKey: vi.fn(async () => ({ teamId, keyId: apiKeyId })),
     },
     sessionStore: { getSession: vi.fn(async () => null) },
     versionStore,

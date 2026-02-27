@@ -1,9 +1,4 @@
-interface DiffEntry {
-  path: string;
-  type: 'added' | 'removed' | 'changed';
-  oldValue?: unknown;
-  newValue?: unknown;
-}
+import type { DiffEntry } from '../types/versioning';
 
 interface DiffViewProps {
   entries: DiffEntry[];

@@ -1,29 +1,14 @@
 import { create } from 'zustand';
-
-interface SpecVersion {
-  id: string;
-  specId: string;
-  versionNumber: number;
-  content: Record<string, unknown>;
-  actorId: string;
-  actorType: 'user' | 'agent';
-  changeSummary: string;
-  createdAt: string;
-}
-
-interface DiffEntry {
-  path: string;
-  type: 'added' | 'removed' | 'changed';
-  oldValue?: unknown;
-  newValue?: unknown;
-}
+import type { DiffEntry, SpecVersion, VersionListResponse } from '../types/versioning';
 
 interface VersionState {
   versions: SpecVersion[];
   total: number;
   loading: boolean;
+  error: string | null;
   selectedVersion: SpecVersion | null;
   diffResult: DiffEntry[] | null;
+  latestDiffRequestId: number;
   fetchVersions: (specId: string, limit?: number, offset?: number) => Promise<void>;
   fetchVersion: (specId: string, versionNumber: number) => Promise<void>;
   fetchDiff: (specId: string, v1: number, v2: number) => Promise<void>;
@@ -33,46 +18,88 @@ interface VersionState {
 
 const API_BASE = '/api/specs';
 
+function toErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : 'Unexpected error';
+}
+
+function ensureOk(res: Response) {
+  if (!res.ok) {
+    throw new Error(`Request failed with status ${res.status}`);
+  }
+}
+
 export const useVersionStore = create<VersionState>()((set, get) => ({
   versions: [],
   total: 0,
   loading: false,
+  error: null,
   selectedVersion: null,
   diffResult: null,
+  latestDiffRequestId: 0,
 
   fetchVersions: async (specId, limit = 50, offset = 0) => {
-    set({ loading: true });
-    const res = await fetch(`${API_BASE}/${specId}/versions?limit=${limit}&offset=${offset}`);
-    const data = await res.json();
-    set({ versions: data.items, total: data.total, loading: false });
+    set({ loading: true, error: null });
+    try {
+      const res = await fetch(`${API_BASE}/${specId}/versions?limit=${limit}&offset=${offset}`);
+      ensureOk(res);
+      const data = (await res.json()) as VersionListResponse;
+      set({ versions: data.items, total: data.total });
+    } catch (error) {
+      set({ error: toErrorMessage(error) });
+    } finally {
+      set({ loading: false });
+    }
   },
 
   fetchVersion: async (specId, versionNumber) => {
-    set({ loading: true });
-    const res = await fetch(`${API_BASE}/${specId}/versions/${versionNumber}`);
-    const data = await res.json();
-    set({ selectedVersion: data, loading: false });
+    set({ loading: true, error: null });
+    try {
+      const res = await fetch(`${API_BASE}/${specId}/versions/${versionNumber}`);
+      ensureOk(res);
+      const data = (await res.json()) as SpecVersion;
+      set({ selectedVersion: data });
+    } catch (error) {
+      set({ error: toErrorMessage(error) });
+    } finally {
+      set({ loading: false });
+    }
   },
 
   fetchDiff: async (specId, v1, v2) => {
-    set({ loading: true });
-    const res = await fetch(`${API_BASE}/${specId}/versions/${v1}/diff/${v2}`);
-    const data = await res.json();
-    set({ diffResult: data, loading: false });
+    const requestId = get().latestDiffRequestId + 1;
+    set({ loading: true, error: null, latestDiffRequestId: requestId, diffResult: null });
+    try {
+      const res = await fetch(`${API_BASE}/${specId}/versions/${v1}/diff/${v2}`);
+      ensureOk(res);
+      const data = (await res.json()) as DiffEntry[];
+      set((state) => (state.latestDiffRequestId === requestId ? { diffResult: data } : {}));
+    } catch (error) {
+      set((state) => (state.latestDiffRequestId === requestId ? { error: toErrorMessage(error) } : {}));
+    } finally {
+      set((state) => (state.latestDiffRequestId === requestId ? { loading: false } : {}));
+    }
   },
 
   restoreVersion: async (specId, versionNumber) => {
-    set({ loading: true });
-    await fetch(`${API_BASE}/${specId}/versions/${versionNumber}/restore`, { method: 'POST' });
-    await get().fetchVersions(specId);
-    set({ loading: false });
+    set({ loading: true, error: null });
+    try {
+      const res = await fetch(`${API_BASE}/${specId}/versions/${versionNumber}/restore`, { method: 'POST' });
+      ensureOk(res);
+      await get().fetchVersions(specId);
+    } catch (error) {
+      set({ error: toErrorMessage(error) });
+    } finally {
+      set({ loading: false });
+    }
   },
 
   reset: () => set({
     versions: [],
     total: 0,
     loading: false,
+    error: null,
     selectedVersion: null,
     diffResult: null,
+    latestDiffRequestId: 0,
   }),
 }));
