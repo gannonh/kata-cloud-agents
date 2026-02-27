@@ -57,11 +57,15 @@ export class DockerInfraAdapter implements InfraAdapter {
   }
 
   async provision(config: EnvConfig): Promise<Environment> {
+    let envId = '';
+    let container: Docker.Container | undefined;
+    let managedVolumeName: string | undefined;
+
     try {
       assertM1NetworkPolicy(config.networkPolicy);
       await this.ensureImage(config.image);
 
-      const envId = this.idGenerator();
+      envId = this.idGenerator();
       const mountPath = config.mountPath ?? DEFAULT_MOUNT_PATH;
       const volumeName = `kata-workspace-${envId}`;
       const mounts: Docker.MountSettings[] = [];
@@ -80,6 +84,7 @@ export class DockerInfraAdapter implements InfraAdapter {
             'kata.managed': 'true',
           },
         });
+        managedVolumeName = volumeName;
         mounts.push({
           Type: 'volume',
           Source: volumeName,
@@ -87,7 +92,7 @@ export class DockerInfraAdapter implements InfraAdapter {
         });
       }
 
-      const container = await this.docker.createContainer({
+      container = await this.docker.createContainer({
         name: this.containerName(envId),
         Image: config.image,
         WorkingDir: mountPath,
@@ -113,6 +118,8 @@ export class DockerInfraAdapter implements InfraAdapter {
 
       return mapContainerToEnvironment(envId, config.image, inspect, this.now());
     } catch (error) {
+      await this.cleanupProvisionResources(container, managedVolumeName);
+
       if (error instanceof InfraAdapterError) {
         throw error;
       }
@@ -130,7 +137,7 @@ export class DockerInfraAdapter implements InfraAdapter {
       try {
         const container = this.docker.getContainer(this.containerName(envId));
         const inspect = (await container.inspect()) as DockerContainerInspect;
-        volumeName = inspect.Config?.Labels?.['kata.env.volume'] || expectedVolumeName;
+        volumeName = inspect.Config?.Labels?.['kata.env.volume'] ?? expectedVolumeName;
 
         try {
           await container.stop({ t: 0 });
@@ -351,6 +358,30 @@ export class DockerInfraAdapter implements InfraAdapter {
           resolve();
         });
       });
+    }
+  }
+
+  private async cleanupProvisionResources(container: Docker.Container | undefined, volumeName: string | undefined): Promise<void> {
+    if (container) {
+      try {
+        await container.remove({ force: true });
+      } catch (error) {
+        if (!this.isNotFoundError(error)) {
+          // Keep the original provisioning error as the primary failure.
+        }
+      }
+    }
+
+    if (!volumeName) {
+      return;
+    }
+
+    try {
+      await this.docker.getVolume(volumeName).remove({ force: true });
+    } catch (error) {
+      if (!this.isNotFoundError(error)) {
+        // Keep the original provisioning error as the primary failure.
+      }
     }
   }
 
