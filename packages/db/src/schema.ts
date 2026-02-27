@@ -1,5 +1,6 @@
 import { relations, sql } from 'drizzle-orm';
 import {
+  integer,
   index,
   jsonb,
   pgEnum,
@@ -15,6 +16,7 @@ export const teamRoleEnum = pgEnum('team_role', ['admin', 'member', 'viewer']);
 export const specStatusEnum = pgEnum('spec_status', ['draft', 'approved', 'in_progress', 'verifying', 'done', 'failed']);
 export const agentRunStatusEnum = pgEnum('agent_run_status', ['queued', 'running', 'completed', 'failed', 'cancelled']);
 export const taskStatusEnum = pgEnum('task_status', ['pending', 'assigned', 'running', 'completed', 'failed', 'skipped']);
+export const actorTypeEnum = pgEnum('actor_type', ['user', 'agent']);
 
 export const users = pgTable('users', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -65,8 +67,11 @@ export const specVersions = pgTable(
   {
     id: uuid('id').defaultRandom().primaryKey(),
     specId: uuid('spec_id').notNull().references(() => specs.id, { onDelete: 'cascade' }),
-    versionNumber: text('version_number').notNull(),
+    versionNumber: integer('version_number').notNull(),
     content: jsonb('content').$type<Record<string, unknown>>().notNull(),
+    actorId: uuid('actor_id').notNull(),
+    actorType: actorTypeEnum('actor_type').notNull(),
+    changeSummary: text('change_summary').notNull().default(''),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [

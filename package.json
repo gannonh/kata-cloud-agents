@@ -10,7 +10,7 @@
     "test": "turbo run test",
     "test:unit": "vitest run --config vitest.config.ts",
     "coverage": "vitest run --config vitest.config.ts --coverage",
-    "test:e2e": "playwright test",
+    "test:e2e": "pnpm vitest run --config vitest.e2e.config.ts && playwright test",
     "lint:biome": "biome check .",
     "check": "pnpm lint && pnpm typecheck && pnpm test"
   },
