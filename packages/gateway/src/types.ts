@@ -29,6 +29,21 @@ export type SessionPrincipal = {
 
 export type AuthPrincipal = ApiKeyPrincipal | SessionPrincipal;
 
+export type AuthResolution =
+  | { ok: true; principal: AuthPrincipal }
+  | {
+      ok: false;
+      status: 401;
+      code: 'INVALID_API_KEY' | 'AUTH_REQUIRED' | 'INVALID_SESSION' | 'SESSION_EXPIRED';
+      message: string;
+    }
+  | {
+      ok: false;
+      status: 503;
+      code: 'AUTH_SERVICE_UNAVAILABLE';
+      message: string;
+    };
+
 export type ApiKeyIdentity = Omit<ApiKeyPrincipal, 'type'>;
 
 export type SessionData = {
@@ -45,6 +60,11 @@ export type SessionStoreAdapter = {
   getSession: (sessionId: string) => Promise<SessionData | null>;
 };
 
+export type ChannelAccessAdapter = {
+  resolveSpecTeamId: (specId: string) => Promise<string | null>;
+  resolveAgentTeamId: (agentId: string) => Promise<string | null>;
+};
+
 export type GatewayConfig = {
   port: number;
   allowedOrigins: string[];
@@ -52,12 +72,16 @@ export type GatewayConfig = {
   redisUrl: string;
   rateLimitWindowMs: number;
   rateLimitMaxRequests: number;
+  wsHeartbeatIntervalMs: number;
+  wsHeartbeatTimeoutMs: number;
+  wsMaxSubscriptionsPerConnection: number;
 };
 
 export type GatewayDeps = {
   logger: Logger;
   apiKeyAuth: ApiKeyAuthAdapter;
   sessionStore: SessionStoreAdapter;
+  channelAccess?: ChannelAccessAdapter;
   now: () => Date;
 };
 

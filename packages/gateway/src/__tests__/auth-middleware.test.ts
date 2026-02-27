@@ -9,6 +9,9 @@ function makeConfig() {
     redisUrl: 'redis://localhost:6379',
     rateLimitWindowMs: 60_000,
     rateLimitMaxRequests: 60,
+    wsHeartbeatIntervalMs: 15_000,
+    wsHeartbeatTimeoutMs: 30_000,
+    wsMaxSubscriptionsPerConnection: 100,
   };
 }
 
