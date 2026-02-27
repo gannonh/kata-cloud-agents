@@ -1,4 +1,9 @@
-import type { DiffEntry } from '@kata/shared';
+type DiffEntry = {
+  path: string;
+  type: 'added' | 'removed' | 'changed';
+  oldValue?: unknown;
+  newValue?: unknown;
+};
 
 const IGNORED_PATHS = new Set(['meta.updatedAt']);
 

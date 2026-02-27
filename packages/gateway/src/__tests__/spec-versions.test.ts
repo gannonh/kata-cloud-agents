@@ -239,7 +239,7 @@ describe('team isolation', () => {
 
 describe('missing version store', () => {
   it('returns 500 when version store dependency is not configured', async () => {
-    const { versionStore: _ignored, ...depsWithoutStore } = makeDeps();
+    const depsWithoutStore = makeDeps({ versionStore: undefined });
     const app = createGatewayApp(makeConfig(), depsWithoutStore);
     const res = await app.request(authedRequest(`/api/specs/${specId}/versions`));
     expect(res.status).toBe(500);

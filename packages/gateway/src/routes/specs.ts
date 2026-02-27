@@ -41,6 +41,14 @@ const CreateVersionBodySchema = z.object({
   changeSummary: z.string().default(''),
 });
 
+const ErrorResponseSchema = z.object({
+  error: z.object({
+    code: z.string(),
+    message: z.string(),
+    requestId: z.string(),
+  }),
+});
+
 const specListRoute = createRoute({
   method: 'get',
   path: '/api/specs',
@@ -72,6 +80,18 @@ const createVersionRoute = createRoute({
       description: 'Version created',
       content: { 'application/json': { schema: SpecVersionSchema } },
     },
+    401: {
+      description: 'Authentication required',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+    404: {
+      description: 'Spec not found',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+    500: {
+      description: 'Version store unavailable',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
   },
 });
 
@@ -91,6 +111,18 @@ const listVersionsRoute = createRoute({
       description: 'Paginated list of versions',
       content: { 'application/json': { schema: VersionListResponseSchema } },
     },
+    401: {
+      description: 'Authentication required',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+    404: {
+      description: 'Spec not found',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+    500: {
+      description: 'Version store unavailable',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
   },
 });
 
@@ -108,6 +140,18 @@ const getVersionRoute = createRoute({
     200: {
       description: 'Single version',
       content: { 'application/json': { schema: SpecVersionSchema } },
+    },
+    401: {
+      description: 'Authentication required',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+    404: {
+      description: 'Spec or version not found',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+    500: {
+      description: 'Version store unavailable',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
     },
   },
 });
@@ -128,6 +172,18 @@ const diffVersionsRoute = createRoute({
       description: 'Structured diff between versions',
       content: { 'application/json': { schema: z.array(DiffEntrySchema) } },
     },
+    401: {
+      description: 'Authentication required',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+    404: {
+      description: 'Spec or version not found',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+    500: {
+      description: 'Version store unavailable',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
   },
 });
 
@@ -145,6 +201,18 @@ const restoreVersionRoute = createRoute({
     201: {
       description: 'New version created from restored content',
       content: { 'application/json': { schema: SpecVersionSchema } },
+    },
+    401: {
+      description: 'Authentication required',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+    404: {
+      description: 'Spec or version not found',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+    500: {
+      description: 'Version store unavailable',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
     },
   },
 });
