@@ -25,27 +25,63 @@ function parseTasks(json: string): PlannedTask[] {
   if (!Array.isArray(parsed)) {
     throw new Error('Expected JSON array of tasks');
   }
-  for (const task of parsed) {
-    if (typeof task.title !== 'string' || typeof task.description !== 'string') {
+  return parsed.map((task, index) => {
+    if (!task || typeof task !== 'object') {
+      throw new Error(`Task ${index} must be an object`);
+    }
+
+    const taskObject = task as Record<string, unknown>;
+    const title = taskObject.title;
+    const description = taskObject.description;
+
+    if (typeof title !== 'string' || typeof description !== 'string') {
       throw new Error('Each task must have title and description strings');
     }
-    if (!Array.isArray(task.dependsOn)) {
-      task.dependsOn = [];
+
+    const rawDependsOn = Array.isArray(taskObject.dependsOn) ? taskObject.dependsOn : [];
+    const dependsOn: number[] = [];
+    const seenDependencies = new Set<number>();
+
+    for (const dep of rawDependsOn) {
+      if (!Number.isInteger(dep)) {
+        throw new Error(`Task ${index} has non-integer dependency`);
+      }
+
+      const depIndex = dep as number;
+      if (depIndex < 0 || depIndex >= parsed.length) {
+        throw new Error(`Task ${index} has out-of-range dependency ${depIndex}`);
+      }
+      if (depIndex === index) {
+        throw new Error(`Task ${index} cannot depend on itself`);
+      }
+
+      if (!seenDependencies.has(depIndex)) {
+        seenDependencies.add(depIndex);
+        dependsOn.push(depIndex);
+      }
     }
-  }
-  return parsed;
+
+    return { title, description, dependsOn };
+  });
 }
 
 function topologicalOrder(tasks: PlannedTask[]): number[] {
   const visited = new Set<number>();
+  const visiting = new Set<number>();
   const order: number[] = [];
 
   function visit(i: number) {
     if (visited.has(i)) return;
-    visited.add(i);
+    if (visiting.has(i)) {
+      throw new Error(`Circular dependency detected at task ${i}`);
+    }
+
+    visiting.add(i);
     for (const dep of tasks[i].dependsOn) {
       visit(dep);
     }
+    visiting.delete(i);
+    visited.add(i);
     order.push(i);
   }
 
@@ -84,6 +120,7 @@ export async function* runCoordinator(config: CoordinatorConfig): AsyncGenerator
   const { systemPrompt, userMessage } = buildCoordinatorPrompt(config.spec);
 
   let planFinalMessage = '';
+  let planningCompleted = false;
   for await (const event of agentLoop(
     {
       systemPrompt,
@@ -99,7 +136,17 @@ export async function* runCoordinator(config: CoordinatorConfig): AsyncGenerator
     yield event;
     if (event.type === 'done') {
       planFinalMessage = event.finalMessage;
+      planningCompleted = true;
     }
+  }
+
+  if (!planningCompleted) {
+    yield {
+      type: 'error',
+      message: 'Planner did not complete; cannot parse tasks',
+      recoverable: false,
+    };
+    return;
   }
 
   // Parse task list from planning output
@@ -118,7 +165,14 @@ export async function* runCoordinator(config: CoordinatorConfig): AsyncGenerator
   }
 
   // Phase 2: Execute in dependency order
-  const order = topologicalOrder(tasks);
+  let order: number[];
+  try {
+    order = topologicalOrder(tasks);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    yield { type: 'error', message: `Invalid task dependencies: ${message}`, recoverable: false };
+    return;
+  }
 
   for (const taskIndex of order) {
     const task = tasks[taskIndex];

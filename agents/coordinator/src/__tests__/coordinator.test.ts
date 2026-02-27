@@ -142,8 +142,64 @@ describe('runCoordinator', () => {
       );
 
     const events = await collectEvents(testSpec, testModelConfig);
+    const executorCalls = mockAgentLoop.mock.calls.slice(1);
+    const firstExecutorConfig = executorCalls[0]?.[0] as { userMessage?: string };
+    const secondExecutorConfig = executorCalls[1]?.[0] as { userMessage?: string };
 
     expect(mockAgentLoop).toHaveBeenCalledTimes(3);
     expect(events.filter((e) => e.type === 'done')).toHaveLength(3);
+    expect(firstExecutorConfig.userMessage).toContain('Task: Task A');
+    expect(secondExecutorConfig.userMessage).toContain('Task: Task B');
+  });
+
+  it('returns planner completion error when planning does not finish with done event', async () => {
+    mockAgentLoop.mockReturnValueOnce(
+      makeAsyncGen([{ type: 'error', message: 'Aborted', recoverable: false }]),
+    );
+
+    const events = await collectEvents(testSpec, testModelConfig);
+    const errorMessages = events
+      .filter((e): e is Extract<AgentEvent, { type: 'error' }> => e.type === 'error')
+      .map((e) => e.message);
+
+    expect(errorMessages).toContain('Planner did not complete; cannot parse tasks');
+  });
+
+  it('rejects out-of-range dependencies in planning output', async () => {
+    const taskJson = JSON.stringify([
+      { title: 'Task A', description: 'First', dependsOn: [99] },
+      { title: 'Task B', description: 'Second', dependsOn: [] },
+    ]);
+
+    mockAgentLoop.mockReturnValueOnce(
+      makeAsyncGen([{ type: 'done', finalMessage: taskJson, totalUsage: zeroUsage }]),
+    );
+
+    const events = await collectEvents(testSpec, testModelConfig);
+    const errorEvent = events.find((e) => e.type === 'error');
+
+    expect(errorEvent).toBeDefined();
+    expect((errorEvent as Extract<AgentEvent, { type: 'error' }>).message).toContain(
+      'Failed to parse task plan',
+    );
+  });
+
+  it('rejects cyclic dependencies in planning output', async () => {
+    const taskJson = JSON.stringify([
+      { title: 'Task A', description: 'First', dependsOn: [1] },
+      { title: 'Task B', description: 'Second', dependsOn: [0] },
+    ]);
+
+    mockAgentLoop.mockReturnValueOnce(
+      makeAsyncGen([{ type: 'done', finalMessage: taskJson, totalUsage: zeroUsage }]),
+    );
+
+    const events = await collectEvents(testSpec, testModelConfig);
+    const errorEvent = events.find((e) => e.type === 'error');
+
+    expect(errorEvent).toBeDefined();
+    expect((errorEvent as Extract<AgentEvent, { type: 'error' }>).message).toContain(
+      'Invalid task dependencies',
+    );
   });
 });

@@ -33,7 +33,11 @@ export class ToolRegistry {
   ): Promise<ToolResult> {
     const tool = this.tools.get(name);
     if (!tool) {
-      throw new Error(`Tool "${name}" not registered`);
+      return {
+        content: `Tool "${name}" not registered`,
+        metadata: { requestedTool: name },
+        isError: true,
+      };
     }
 
     const validate = this.ajv.compile(tool.parameters);

@@ -178,6 +178,9 @@ describe('integration: dependency ordering', () => {
     const aIndex = executionOrder.indexOf('task-1');
     const bIndex = executionOrder.indexOf('task-2');
     const cIndex = executionOrder.indexOf('task-3');
+    expect(aIndex).toBeGreaterThanOrEqual(0);
+    expect(bIndex).toBeGreaterThanOrEqual(0);
+    expect(cIndex).toBeGreaterThanOrEqual(0);
     expect(aIndex).toBeLessThan(bIndex);
     expect(aIndex).toBeLessThan(cIndex);
   });

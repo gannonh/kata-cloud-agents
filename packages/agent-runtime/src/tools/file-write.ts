@@ -1,5 +1,5 @@
-import { writeFile, mkdir } from 'node:fs/promises';
-import { resolve, relative, dirname } from 'node:path';
+import { writeFile, mkdir, lstat, realpath } from 'node:fs/promises';
+import { resolve, relative, dirname, sep } from 'node:path';
 import { Type } from '@sinclair/typebox';
 import type { AgentTool, WorkspaceContext } from '../types.js';
 
@@ -10,6 +10,11 @@ function resolveSafe(rootDir: string, filePath: string): string | null {
     return null;
   }
   return resolved;
+}
+
+function isWithinWorkspace(rootDir: string, candidate: string): boolean {
+  const rel = relative(rootDir, candidate);
+  return rel !== '..' && !rel.startsWith(`..${sep}`);
 }
 
 export function createFileWriteTool(ctx: WorkspaceContext): AgentTool {
@@ -38,9 +43,34 @@ export function createFileWriteTool(ctx: WorkspaceContext): AgentTool {
       }
 
       try {
+        const workspaceRoot = await realpath(ctx.rootDir);
+
         if (createDirs) {
           await mkdir(dirname(resolved), { recursive: true });
         }
+
+        const resolvedDir = await realpath(dirname(resolved));
+        if (!isWithinWorkspace(workspaceRoot, resolvedDir)) {
+          return {
+            content: `Path "${filePath}" resolves outside workspace root`,
+            metadata: {},
+            isError: true,
+          };
+        }
+
+        try {
+          const stat = await lstat(resolved);
+          if (stat.isSymbolicLink()) {
+            return {
+              content: `Refusing to write through symlink: "${filePath}"`,
+              metadata: {},
+              isError: true,
+            };
+          }
+        } catch {
+          // Ignore missing file; writing a new file is allowed.
+        }
+
         await writeFile(resolved, content, 'utf-8');
         return {
           content: `Written ${Buffer.byteLength(content)} bytes to ${filePath}`,

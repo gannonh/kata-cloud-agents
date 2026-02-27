@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
-import { mkdtemp, rm, writeFile, readFile } from 'node:fs/promises';
+import { mkdtemp, rm, writeFile, readFile, symlink } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { createShellExecTool } from '../tools/shell-exec.js';
@@ -46,6 +46,31 @@ describe('shell_exec', () => {
     const result = await tool.execute({ command: 'pwd' });
     expect(result.content.trim()).toBe(workDir);
   });
+
+  it('rejects cwd outside workspace', async () => {
+    const tool = createShellExecTool(ctx);
+    const result = await tool.execute({ command: 'pwd', cwd: '../' });
+    expect(result.isError).toBe(true);
+    expect(result.content).toMatch(/outside workspace/i);
+  });
+
+  it('does not expose arbitrary host environment variables', async () => {
+    const original = process.env.KATA_TEST_SECRET;
+    process.env.KATA_TEST_SECRET = 'top-secret';
+
+    try {
+      const tool = createShellExecTool(ctx);
+      const result = await tool.execute({ command: 'printf %s "$KATA_TEST_SECRET"' });
+      expect(result.isError).toBe(false);
+      expect(result.content).toBe('');
+    } finally {
+      if (original === undefined) {
+        delete process.env.KATA_TEST_SECRET;
+      } else {
+        process.env.KATA_TEST_SECRET = original;
+      }
+    }
+  });
 });
 
 describe('file_read', () => {
@@ -68,6 +93,29 @@ describe('file_read', () => {
     const result = await tool.execute({ path: '../../etc/passwd' });
     expect(result.isError).toBe(true);
     expect(result.content).toMatch(/outside workspace/i);
+  });
+
+  it('rejects unsupported encodings', async () => {
+    await writeFile(join(workDir, 'test.txt'), 'hello content');
+    const tool = createFileReadTool(ctx);
+    const result = await tool.execute({ path: 'test.txt', encoding: 'invalid-encoding' });
+    expect(result.isError).toBe(true);
+    expect(result.content).toMatch(/unsupported encoding/i);
+  });
+
+  it('rejects symlink paths that resolve outside workspace', async () => {
+    const outsideFile = join(tmpdir(), `kata-outside-read-${Date.now()}.txt`);
+    await writeFile(outsideFile, 'outside');
+    await symlink(outsideFile, join(workDir, 'outside-link.txt'));
+
+    try {
+      const tool = createFileReadTool(ctx);
+      const result = await tool.execute({ path: 'outside-link.txt' });
+      expect(result.isError).toBe(true);
+      expect(result.content).toMatch(/outside workspace/i);
+    } finally {
+      await rm(outsideFile, { force: true });
+    }
   });
 });
 
@@ -99,5 +147,21 @@ describe('file_write', () => {
     const result = await tool.execute({ path: '../outside.txt', content: 'bad' });
     expect(result.isError).toBe(true);
     expect(result.content).toMatch(/outside workspace/i);
+  });
+
+  it('rejects writes through symlinks', async () => {
+    const outsideFile = join(tmpdir(), `kata-outside-write-${Date.now()}.txt`);
+    await writeFile(outsideFile, 'outside');
+    await symlink(outsideFile, join(workDir, 'outside-link.txt'));
+
+    try {
+      const tool = createFileWriteTool(ctx);
+      const result = await tool.execute({ path: 'outside-link.txt', content: 'new content' });
+      expect(result.isError).toBe(true);
+      expect(result.content).toMatch(/symlink/i);
+      expect(await readFile(outsideFile, 'utf-8')).toBe('outside');
+    } finally {
+      await rm(outsideFile, { force: true });
+    }
   });
 });

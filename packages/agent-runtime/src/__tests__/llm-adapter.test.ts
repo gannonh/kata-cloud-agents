@@ -118,4 +118,21 @@ describe('createLLMAdapter', () => {
       expect.objectContaining({ temperature: 0.5, maxTokens: 1000 }),
     );
   });
+
+  it('defensively parses malformed provider payloads', async () => {
+    mockCompleteSimple.mockResolvedValueOnce({
+      role: 'assistant',
+      content: 'not-an-array',
+      usage: null,
+      stopReason: 'unexpected',
+    } as never);
+
+    const adapter = createLLMAdapter({ provider: 'anthropic', model: 'claude-sonnet-4-20250514' });
+    const result = await adapter.complete('System', [{ role: 'user', content: 'test' }]);
+
+    expect(result.text).toBe('');
+    expect(result.toolCalls).toEqual([]);
+    expect(result.usage.total).toBe(0);
+    expect(result.stopReason).toBe('error');
+  });
 });

@@ -18,6 +18,14 @@ export interface LLMAdapter {
   ) => Promise<LLMResponse>;
 }
 
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : null;
+}
+
+function asNumber(value: unknown): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : 0;
+}
+
 function convertMessages(messages: ChatMessage[]): unknown[] {
   return messages.map((msg) => {
     if (msg.role === 'user') {
@@ -56,33 +64,51 @@ function convertMessages(messages: ChatMessage[]): unknown[] {
 function extractResponse(msg: Record<string, unknown>): LLMResponse {
   let text = '';
   const toolCalls: LLMToolCall[] = [];
-  const content = msg.content as Array<Record<string, unknown>>;
+  const content = Array.isArray(msg.content) ? msg.content : [];
 
   for (const block of content) {
-    if (block.type === 'text') {
-      text += block.text as string;
-    } else if (block.type === 'toolCall') {
+    const contentBlock = asRecord(block);
+    if (!contentBlock) continue;
+
+    if (contentBlock.type === 'text' && typeof contentBlock.text === 'string') {
+      text += contentBlock.text;
+    } else if (
+      contentBlock.type === 'toolCall' &&
+      typeof contentBlock.id === 'string' &&
+      typeof contentBlock.name === 'string'
+    ) {
+      const args = asRecord(contentBlock.arguments) ?? {};
       toolCalls.push({
-        id: block.id as string,
-        name: block.name as string,
-        arguments: block.arguments as Record<string, unknown>,
+        id: contentBlock.id,
+        name: contentBlock.name,
+        arguments: args,
       });
     }
   }
 
-  const rawUsage = msg.usage as Record<string, unknown>;
-  const rawCost = rawUsage.cost as Record<string, number>;
+  const rawUsage = asRecord(msg.usage) ?? {};
+  const rawCost = asRecord(rawUsage.cost) ?? {};
+
+  const stopReasonRaw = msg.stopReason;
+  const stopReason =
+    stopReasonRaw === 'stop' ||
+    stopReasonRaw === 'maxTokens' ||
+    stopReasonRaw === 'toolUse' ||
+    stopReasonRaw === 'error' ||
+    stopReasonRaw === 'aborted'
+      ? stopReasonRaw
+      : 'error';
 
   const usage: TokenUsage = {
-    input: rawUsage.input as number,
-    output: rawUsage.output as number,
-    cacheRead: rawUsage.cacheRead as number,
-    cacheWrite: rawUsage.cacheWrite as number,
-    total: rawUsage.totalTokens as number,
+    input: asNumber(rawUsage.input),
+    output: asNumber(rawUsage.output),
+    cacheRead: asNumber(rawUsage.cacheRead),
+    cacheWrite: asNumber(rawUsage.cacheWrite),
+    total: asNumber(rawUsage.totalTokens),
     cost: {
-      input: rawCost.input,
-      output: rawCost.output,
-      total: rawCost.total,
+      input: asNumber(rawCost.input),
+      output: asNumber(rawCost.output),
+      total: asNumber(rawCost.total),
     },
   };
 
@@ -90,8 +116,8 @@ function extractResponse(msg: Record<string, unknown>): LLMResponse {
     text,
     toolCalls,
     usage,
-    stopReason: msg.stopReason as LLMResponse['stopReason'],
-    errorMessage: msg.errorMessage as string | undefined,
+    stopReason,
+    errorMessage: typeof msg.errorMessage === 'string' ? msg.errorMessage : undefined,
   };
 }
 
@@ -122,15 +148,15 @@ export function createLLMAdapter(config: {
         systemPrompt,
         messages: convertMessages(messages),
         tools: tools ? convertTools(tools) : undefined,
-      };
+      } as Parameters<typeof completeSimple>[1];
 
-      const result = await completeSimple(model, context as never, {
+      const result = await completeSimple(model, context, {
         temperature: config.temperature,
         maxTokens: config.maxTokens,
         signal,
       });
 
-      return extractResponse(result as unknown as Record<string, unknown>);
+      return extractResponse(asRecord(result) ?? {});
     },
   };
 }

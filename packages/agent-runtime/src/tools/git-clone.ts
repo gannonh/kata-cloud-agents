@@ -1,4 +1,4 @@
-import { exec } from 'node:child_process';
+import { execFile } from 'node:child_process';
 import { resolve, relative } from 'node:path';
 import { Type } from '@sinclair/typebox';
 import type { AgentTool, WorkspaceContext } from '../types.js';
@@ -15,7 +15,7 @@ export function createGitCloneTool(ctx: WorkspaceContext): AgentTool {
       branch: Type.Optional(Type.String({ description: 'Branch to clone' })),
       depth: Type.Optional(Type.Number({ description: 'Shallow clone depth', default: 1 })),
     }),
-    async execute(params) {
+    async execute(params, signal) {
       const url = params.url as string;
       const dest = (params.dest as string) ?? 'repo';
       const branch = params.branch as string | undefined;
@@ -31,27 +31,32 @@ export function createGitCloneTool(ctx: WorkspaceContext): AgentTool {
         };
       }
 
-      const args = ['git', 'clone'];
-      if (depth > 0) args.push(`--depth=${depth}`);
-      if (branch) args.push(`--branch=${branch}`);
-      args.push(url, destPath);
+      const gitArgs = ['clone'];
+      if (depth > 0) gitArgs.push(`--depth=${depth}`);
+      if (branch) gitArgs.push('--branch', branch);
+      gitArgs.push(url, destPath);
 
       return new Promise((resolvePromise) => {
-        exec(args.join(' '), { cwd: ctx.rootDir, timeout: 120_000 }, (error, stdout, stderr) => {
-          if (error) {
+        execFile(
+          'git',
+          gitArgs,
+          { cwd: ctx.rootDir, timeout: 120_000, signal },
+          (error, _stdout, stderr) => {
+            if (error) {
+              resolvePromise({
+                content: `Clone failed: ${stderr || error.message}`,
+                metadata: {},
+                isError: true,
+              });
+              return;
+            }
             resolvePromise({
-              content: `Clone failed: ${stderr || error.message}`,
-              metadata: {},
-              isError: true,
+              content: `Cloned ${url} to ${dest}`,
+              metadata: { path: destPath },
+              isError: false,
             });
-            return;
-          }
-          resolvePromise({
-            content: `Cloned ${url} to ${dest}`,
-            metadata: { path: destPath },
-            isError: false,
-          });
-        });
+          },
+        );
       });
     },
   };

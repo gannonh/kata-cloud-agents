@@ -52,12 +52,19 @@ export async function* agentLoop(
     yield { type: 'turn_start', turnNumber: turn };
     yield { type: 'llm_start', model: config.modelConfig.model };
 
-    const response = await adapter.complete(
-      config.systemPrompt,
-      messages,
-      config.tools as never[],
-      config.signal,
-    );
+    let response;
+    try {
+      response = await adapter.complete(
+        config.systemPrompt,
+        messages,
+        config.tools as never[],
+        config.signal,
+      );
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      yield { type: 'error', message: `LLM adapter error: ${message}`, recoverable: false };
+      return;
+    }
 
     totalUsage = addUsage(totalUsage, response.usage);
     yield { type: 'llm_end', message: response.text, usage: response.usage };
@@ -73,7 +80,18 @@ export async function* agentLoop(
     for (const toolCall of response.toolCalls) {
       yield { type: 'tool_call', toolName: toolCall.name, params: toolCall.arguments };
 
-      const result = await registry.execute(toolCall.name, toolCall.arguments, config.signal);
+      let result;
+      try {
+        result = await registry.execute(toolCall.name, toolCall.arguments, config.signal);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        yield {
+          type: 'error',
+          message: `Tool registry error for "${toolCall.name}": ${message}`,
+          recoverable: false,
+        };
+        return;
+      }
 
       yield {
         type: 'tool_result',

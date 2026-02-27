@@ -1,4 +1,4 @@
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import { Type } from '@sinclair/typebox';
 import type { AgentTool, WorkspaceContext } from '../types.js';
 
@@ -17,12 +17,12 @@ export function createGitDiffTool(ctx: WorkspaceContext): AgentTool {
       const ref = params.ref as string | undefined;
 
       try {
-        const args = ['git', 'diff'];
-        if (staged) args.push('--staged');
-        if (ref) args.push(ref);
-        if (path) args.push('--', path);
+        const gitArgs = ['diff'];
+        if (staged) gitArgs.push('--staged');
+        if (ref) gitArgs.push(ref);
+        if (path) gitArgs.push('--', path);
 
-        const output = execSync(args.join(' '), {
+        const output = execFileSync('git', gitArgs, {
           cwd: ctx.rootDir,
           encoding: 'utf-8',
           maxBuffer: 1024 * 1024,

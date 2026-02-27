@@ -49,7 +49,10 @@ describe('ToolRegistry', () => {
 
   it('rejects execution of unregistered tool', async () => {
     const registry = new ToolRegistry();
-    await expect(registry.execute('nonexistent', {})).rejects.toThrow(/not registered/);
+    const result = await registry.execute('nonexistent', {});
+    expect(result.isError).toBe(true);
+    expect(result.content).toMatch(/not registered/i);
+    expect(result.metadata).toEqual({ requestedTool: 'nonexistent' });
   });
 
   it('validates params against schema and rejects invalid', async () => {

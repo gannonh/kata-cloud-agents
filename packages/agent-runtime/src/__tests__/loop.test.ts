@@ -170,9 +170,31 @@ describe('agentLoop', () => {
     };
 
     const events = await collectEvents(config, adapter, registry);
-    const lastEvent = events[events.length - 1];
+    const lastEvent = events[events.length - 1] as Extract<AgentEvent, { type: 'error' }>;
 
-    expect(lastEvent.type === 'error' || lastEvent.type === 'done').toBe(true);
+    expect(lastEvent.type).toBe('error');
+    expect(lastEvent.message).toMatch(/aborted/i);
+  });
+
+  it('returns an error event when adapter throws', async () => {
+    const adapter: LLMAdapter = {
+      complete: vi.fn(async () => {
+        throw new Error('provider unavailable');
+      }),
+    };
+    const registry = new ToolRegistry();
+    const config: LoopConfig = {
+      systemPrompt: 'System',
+      userMessage: 'Hi',
+      tools: [],
+      modelConfig: { provider: 'anthropic', model: 'test' },
+    };
+
+    const events = await collectEvents(config, adapter, registry);
+    const lastEvent = events[events.length - 1] as Extract<AgentEvent, { type: 'error' }>;
+
+    expect(lastEvent.type).toBe('error');
+    expect(lastEvent.message).toContain('LLM adapter error');
   });
 
   it('aggregates token usage across turns', async () => {
