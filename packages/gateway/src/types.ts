@@ -12,7 +12,8 @@ export type ErrorCode =
   | 'RATE_LIMITED'
   | 'NOT_FOUND'
   | 'INTERNAL_ERROR'
-  | 'HTTP_ERROR';
+  | 'HTTP_ERROR'
+  | 'VALIDATION_ERROR';
 
 export type ApiKeyPrincipal = {
   type: 'api_key';
@@ -65,6 +66,33 @@ export type ChannelAccessAdapter = {
   resolveAgentTeamId: (agentId: string) => Promise<string | null>;
 };
 
+export type VersionStoreVersionRecord = {
+  id: string;
+  specId: string;
+  versionNumber: number;
+  content: Record<string, unknown>;
+  actorId: string;
+  actorType: string;
+  changeSummary: string;
+  createdAt: Date;
+};
+
+export type VersionStoreAdapter = {
+  getSpec: (specId: string) => Promise<{ id: string; teamId: string; content: Record<string, unknown> } | null>;
+  updateSpecContent: (specId: string, content: Record<string, unknown>) => Promise<void>;
+  createVersion: (data: {
+    specId: string;
+    versionNumber: number;
+    content: Record<string, unknown>;
+    actorId: string;
+    actorType: 'user' | 'agent';
+    changeSummary: string;
+  }) => Promise<VersionStoreVersionRecord>;
+  getVersion: (specId: string, versionNumber: number) => Promise<VersionStoreVersionRecord | null>;
+  listVersions: (specId: string, limit: number, offset: number) => Promise<{ items: VersionStoreVersionRecord[]; total: number }>;
+  getMaxVersionNumber: (specId: string) => Promise<number>;
+};
+
 export type GatewayConfig = {
   port: number;
   allowedOrigins: string[];
@@ -82,6 +110,7 @@ export type GatewayDeps = {
   apiKeyAuth: ApiKeyAuthAdapter;
   sessionStore: SessionStoreAdapter;
   channelAccess?: ChannelAccessAdapter;
+  versionStore?: VersionStoreAdapter;
   now: () => Date;
 };
 
