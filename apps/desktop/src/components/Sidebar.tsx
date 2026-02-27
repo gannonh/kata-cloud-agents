@@ -22,7 +22,7 @@ export function Sidebar() {
         </button>
       </div>
       <div className="flex-1 py-2">
-        {routes.map((item) => (
+        {routes.filter((item) => item.nav !== false).map((item) => (
           <NavLink
             key={item.path}
             to={item.path}
