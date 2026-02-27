@@ -19,7 +19,7 @@ import {
 describe('db enums', () => {
   it('defines expected enum values', () => {
     expect(teamRoleEnum.enumValues).toEqual(['admin', 'member', 'viewer']);
-    expect(specStatusEnum.enumValues).toEqual(['draft', 'active', 'paused', 'completed', 'archived']);
+    expect(specStatusEnum.enumValues).toEqual(['draft', 'approved', 'in_progress', 'verifying', 'done', 'failed']);
     expect(agentRunStatusEnum.enumValues).toEqual(['queued', 'running', 'completed', 'failed', 'cancelled']);
     expect(taskStatusEnum.enumValues).toEqual(['pending', 'assigned', 'running', 'completed', 'failed', 'skipped']);
   });

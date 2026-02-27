@@ -12,7 +12,7 @@ import {
 } from 'drizzle-orm/pg-core';
 
 export const teamRoleEnum = pgEnum('team_role', ['admin', 'member', 'viewer']);
-export const specStatusEnum = pgEnum('spec_status', ['draft', 'active', 'paused', 'completed', 'archived']);
+export const specStatusEnum = pgEnum('spec_status', ['draft', 'approved', 'in_progress', 'verifying', 'done', 'failed']);
 export const agentRunStatusEnum = pgEnum('agent_run_status', ['queued', 'running', 'completed', 'failed', 'cancelled']);
 export const taskStatusEnum = pgEnum('task_status', ['pending', 'assigned', 'running', 'completed', 'failed', 'skipped']);
 
