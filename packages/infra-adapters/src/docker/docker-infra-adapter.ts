@@ -51,7 +51,7 @@ export class DockerInfraAdapter implements InfraAdapter {
   private readonly now: () => Date;
 
   constructor(options: DockerInfraAdapterOptions = {}) {
-    this.docker = options.docker ?? (createLocalDockerClient() as unknown as DockerClient);
+    this.docker = options.docker ?? (createLocalDockerClient() as DockerClient);
     this.idGenerator = options.idGenerator ?? randomUUID;
     this.now = options.now ?? (() => new Date());
   }
@@ -118,13 +118,22 @@ export class DockerInfraAdapter implements InfraAdapter {
 
       return mapContainerToEnvironment(envId, config.image, inspect, this.now());
     } catch (error) {
-      await this.cleanupProvisionResources(container, managedVolumeName);
+      const cleanupErrors = await this.cleanupProvisionResources(container, managedVolumeName);
 
       if (error instanceof InfraAdapterError) {
-        throw error;
+        if (cleanupErrors.length === 0) {
+          throw error;
+        }
+
+        throw new InfraAdapterError(error.code, error.message, { ...(error.details ?? {}), cleanupErrors }, error.cause ?? error);
       }
 
-      throw new InfraAdapterError('PROVISION_FAILED', 'Failed to provision Docker environment', { config }, error);
+      const details: Record<string, unknown> = { config };
+      if (cleanupErrors.length > 0) {
+        details.cleanupErrors = cleanupErrors;
+      }
+
+      throw new InfraAdapterError('PROVISION_FAILED', 'Failed to provision Docker environment', details, error);
     }
   }
 
@@ -182,7 +191,7 @@ export class DockerInfraAdapter implements InfraAdapter {
         repo,
         tag: tagPart,
       });
-      const imageId = this.extractImageId(commitResult);
+      const imageId = this.extractImageId(envId, commitResult);
 
       return mapSnapshot(envId, imageId, `${repo}:${tagPart}`, now);
     } catch (error) {
@@ -216,11 +225,19 @@ export class DockerInfraAdapter implements InfraAdapter {
 
       await this.demuxToBuffers(stream, stdoutChunks, stderrChunks);
       const inspect = await exec.inspect();
+      const exitCode = inspect.ExitCode;
+      if (exitCode == null) {
+        throw new InfraAdapterError('EXEC_FAILED', 'Docker exec completed without an exit code', {
+          envId,
+          command,
+          inspect,
+        });
+      }
 
       return {
         envId,
         command,
-        exitCode: inspect.ExitCode ?? 0,
+        exitCode,
         stdout: Buffer.concat(stdoutChunks).toString('utf8'),
         stderr: Buffer.concat(stderrChunks).toString('utf8'),
         startedAt,
@@ -240,16 +257,26 @@ export class DockerInfraAdapter implements InfraAdapter {
     const waiters: Array<() => void> = [];
     let done = false;
     let failure: unknown;
+    let logsStream: NodeJS.ReadableStream | undefined;
 
     const push = (entry: LogEntry) => {
+      if (done) {
+        return;
+      }
       queue.push(entry);
       this.notify(waiters);
     };
     const finish = () => {
+      if (done) {
+        return;
+      }
       done = true;
       this.notify(waiters);
     };
     const fail = (error: unknown) => {
+      if (done) {
+        return;
+      }
       failure = error;
       done = true;
       this.notify(waiters);
@@ -264,6 +291,7 @@ export class DockerInfraAdapter implements InfraAdapter {
           follow: true,
           timestamps: true,
         });
+        logsStream = logs;
 
         if (Buffer.isBuffer(logs)) {
           for (const line of logs.toString('utf8').split(/\r?\n/)) {
@@ -314,22 +342,28 @@ export class DockerInfraAdapter implements InfraAdapter {
       }
     })();
 
-    while (!done || queue.length > 0) {
-      if (queue.length > 0) {
-        const entry = queue.shift();
-        if (entry) {
-          yield entry;
+    try {
+      while (!done || queue.length > 0) {
+        if (queue.length > 0) {
+          const entry = queue.shift();
+          if (entry) {
+            yield entry;
+          }
+          continue;
         }
-        continue;
+
+        await new Promise<void>((resolve) => {
+          waiters.push(resolve);
+        });
       }
 
-      await new Promise<void>((resolve) => {
-        waiters.push(resolve);
-      });
-    }
-
-    if (failure) {
-      throw failure;
+      if (failure) {
+        throw failure;
+      }
+    } finally {
+      done = true;
+      this.destroyStream(logsStream);
+      this.notify(waiters);
     }
   }
 
@@ -346,7 +380,7 @@ export class DockerInfraAdapter implements InfraAdapter {
       await new Promise<void>((resolve, reject) => {
         const followProgress = this.docker.modem.followProgress?.bind(this.docker.modem);
         if (!followProgress) {
-          resolve();
+          this.waitForStreamEnd(pullStream).then(resolve, reject);
           return;
         }
 
@@ -361,28 +395,32 @@ export class DockerInfraAdapter implements InfraAdapter {
     }
   }
 
-  private async cleanupProvisionResources(container: Docker.Container | undefined, volumeName: string | undefined): Promise<void> {
+  private async cleanupProvisionResources(container: Docker.Container | undefined, volumeName: string | undefined): Promise<unknown[]> {
+    const cleanupErrors: unknown[] = [];
+
     if (container) {
       try {
         await container.remove({ force: true });
       } catch (error) {
         if (!this.isNotFoundError(error)) {
-          // Keep the original provisioning error as the primary failure.
+          cleanupErrors.push(error);
         }
       }
     }
 
     if (!volumeName) {
-      return;
+      return cleanupErrors;
     }
 
     try {
       await this.docker.getVolume(volumeName).remove({ force: true });
     } catch (error) {
       if (!this.isNotFoundError(error)) {
-        // Keep the original provisioning error as the primary failure.
+        cleanupErrors.push(error);
       }
     }
+
+    return cleanupErrors;
   }
 
   private toDockerEnv(env?: Record<string, string>): string[] | undefined {
@@ -412,7 +450,7 @@ export class DockerInfraAdapter implements InfraAdapter {
     throw new InfraAdapterError('ENV_NOT_FOUND', 'Docker environment not found', { envId });
   }
 
-  private extractImageId(commitResult: unknown): string {
+  private extractImageId(envId: string, commitResult: unknown): string {
     if (typeof commitResult === 'string') {
       return commitResult;
     }
@@ -424,7 +462,10 @@ export class DockerInfraAdapter implements InfraAdapter {
       }
     }
 
-    return '';
+    throw new InfraAdapterError('SNAPSHOT_FAILED', 'Docker commit response missing image ID', {
+      envId,
+      commitResult,
+    });
   }
 
   private async demuxToBuffers(
@@ -517,9 +558,24 @@ export class DockerInfraAdapter implements InfraAdapter {
     }
   }
 
+  private destroyStream(stream: NodeJS.ReadableStream | undefined): void {
+    if (!stream) {
+      return;
+    }
+
+    const candidate = stream as NodeJS.ReadableStream & {
+      destroyed?: boolean;
+      destroy?: (error?: Error) => unknown;
+    };
+
+    if (!candidate.destroyed && typeof candidate.destroy === 'function') {
+      candidate.destroy();
+    }
+  }
+
   private isNotFoundError(error: unknown): boolean {
     const err = error as DockerError;
     if (err?.statusCode === 404) return true;
-    return err?.message?.toLowerCase().includes('no such') ?? false;
+    return /no such (container|volume|image)\b/i.test(err?.message ?? '');
   }
 }

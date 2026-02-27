@@ -14,6 +14,18 @@ describe('DockerInfraAdapter exec/logs/snapshot', () => {
     expect(result.stderr).toContain('exec-stderr');
   });
 
+  it('exec fails when Docker does not provide an exit code', async () => {
+    const adapter = new DockerInfraAdapter({
+      docker: createMockDocker({
+        execInspectResult: {},
+      }) as never,
+    });
+
+    await expect(adapter.exec('env-1', 'echo hi')).rejects.toMatchObject({
+      code: 'EXEC_FAILED',
+    });
+  });
+
   it('streamLogs yields labeled entries', async () => {
     const adapter = new DockerInfraAdapter({
       docker: createMockDocker() as never,
@@ -29,6 +41,24 @@ describe('DockerInfraAdapter exec/logs/snapshot', () => {
     expect(entries.every((e) => e.source === 'stdout' || e.source === 'stderr')).toBe(true);
   });
 
+  it('streamLogs closes the Docker log stream when iteration ends early', async () => {
+    const logStream = new PassThrough();
+    const adapter = new DockerInfraAdapter({
+      docker: createMockDocker({
+        autoEndLogStream: false,
+        logStream,
+      }) as never,
+    });
+
+    const iterator = adapter.streamLogs('env-1')[Symbol.asyncIterator]();
+    const first = await iterator.next();
+
+    expect(first.done).toBe(false);
+    await iterator.return?.();
+    await new Promise((resolve) => setImmediate(resolve));
+    expect(logStream.destroyed).toBe(true);
+  });
+
   it('snapshot commits container and returns metadata', async () => {
     const adapter = new DockerInfraAdapter({
       docker: createMockDocker() as never,
@@ -40,9 +70,28 @@ describe('DockerInfraAdapter exec/logs/snapshot', () => {
     expect(snap.imageId).toBeTruthy();
     expect(snap.tag).toContain('kata-snapshots');
   });
+
+  it('snapshot fails when Docker commit response has no image id', async () => {
+    const adapter = new DockerInfraAdapter({
+      docker: createMockDocker({
+        commitResult: {},
+      }) as never,
+    });
+
+    await expect(adapter.snapshot('env-1')).rejects.toMatchObject({
+      code: 'SNAPSHOT_FAILED',
+    });
+  });
 });
 
-function createMockDocker() {
+type MockDockerOptions = {
+  execInspectResult?: Record<string, unknown>;
+  commitResult?: unknown;
+  logStream?: PassThrough;
+  autoEndLogStream?: boolean;
+};
+
+function createMockDocker(options: MockDockerOptions = {}) {
   let demuxCalls = 0;
 
   const execStream = new PassThrough();
@@ -50,14 +99,16 @@ function createMockDocker() {
     execStream.end();
   });
 
-  const logStream = new PassThrough();
-  process.nextTick(() => {
-    logStream.end();
-  });
+  const logStream = options.logStream ?? new PassThrough();
+  if (options.autoEndLogStream !== false) {
+    process.nextTick(() => {
+      logStream.end();
+    });
+  }
 
   const execHandle = {
     start: vi.fn().mockResolvedValue(execStream),
-    inspect: vi.fn().mockResolvedValue({ ExitCode: 0 }),
+    inspect: vi.fn().mockResolvedValue(options.execInspectResult ?? { ExitCode: 0 }),
   };
 
   const container = {
@@ -75,7 +126,7 @@ function createMockDocker() {
     }),
     exec: vi.fn().mockResolvedValue(execHandle),
     logs: vi.fn().mockResolvedValue(logStream),
-    commit: vi.fn().mockResolvedValue({ Id: 'sha256:snapshot-1' }),
+    commit: vi.fn().mockResolvedValue(options.commitResult ?? { Id: 'sha256:snapshot-1' }),
     start: vi.fn().mockResolvedValue(undefined),
     stop: vi.fn().mockResolvedValue(undefined),
     remove: vi.fn().mockResolvedValue(undefined),
