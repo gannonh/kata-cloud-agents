@@ -1,10 +1,14 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import { Agentation } from 'agentation';
 
 import { App } from './App';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import './index.css';
 import { initRealtime } from './realtime';
+
+const agentationEndpoint =
+  import.meta.env.VITE_AGENTATION_ENDPOINT ?? 'http://127.0.0.1:4747';
 
 window.addEventListener('unhandledrejection', (event) => {
   console.error('[Unhandled Promise Rejection]', event.reason);
@@ -35,5 +39,6 @@ ReactDOM.createRoot(rootEl).render(
     <ErrorBoundary>
       <App />
     </ErrorBoundary>
+    {import.meta.env.DEV && <Agentation endpoint={agentationEndpoint} />}
   </React.StrictMode>,
 );
