@@ -1,5 +1,6 @@
 export * from './auth.js';
 export * from './spec.js';
+export * from './spec-version.js';
 export * from './agent.js';
 export * from './environment.js';
 export * from './task.js';
