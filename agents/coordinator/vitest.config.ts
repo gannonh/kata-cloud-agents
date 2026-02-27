@@ -10,6 +10,9 @@ export default defineConfig({
       '@kata/spec-engine': fileURLToPath(
         new URL('../../packages/spec-engine/src/index.ts', import.meta.url),
       ),
+      '@kata/shared': fileURLToPath(
+        new URL('../../packages/shared/src/index.ts', import.meta.url),
+      ),
     },
   },
   test: {
