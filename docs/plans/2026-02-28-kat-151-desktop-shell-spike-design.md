@@ -284,3 +284,12 @@ That means a shell with slightly higher near-term adaptation cost can still rank
 - Implementation checklist and migration steps if adopted/adapted: to be produced in the follow-on implementation plan.
 - Same-ticket proof of concept shell swap: explicitly included as a required output.
 - Full-project scope, not just current implementation: enforced by the requirement to assess every candidate against `docs/PROJECT_PLAN.md`.
+
+## Verification
+
+- `pnpm --filter @kata/desktop test`
+- `pnpm exec vitest run tests/unit/desktop/layout.test.tsx tests/unit/desktop/sidebar.test.tsx tests/unit/desktop/navigation.test.tsx tests/unit/desktop/store.test.ts`
+- `pnpm --filter @kata/desktop lint`
+- `pnpm --filter @kata/desktop typecheck`
+- `pnpm ci:checks` was intentionally skipped because the final diff is limited to app-local desktop shell files plus this design doc, and it does not touch shared CI scripts, workflow config, or other shared verification surfaces.
+- `pnpm desktop:tauri:dev` was started successfully far enough to verify the Vite dev server, Tauri watcher, and desktop binary launch path, then stopped manually with `Ctrl-C`; the interactive desktop session was not left running to completion in this non-interactive verification pass.
