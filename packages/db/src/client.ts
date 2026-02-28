@@ -1,17 +1,19 @@
-/** Eagerly connects to PostgreSQL on import. Requires DATABASE_URL.
- *  Import @kata/db for schema-only access without side effects. */
-import { config as loadEnv } from 'dotenv';
-import { drizzle } from 'drizzle-orm/node-postgres';
-import pg from 'pg';
-import * as schema from './schema.js';
+export const CONVEX_DEPLOYMENT_ENV = 'CONVEX_DEPLOYMENT';
+export const CONVEX_URL_ENV = 'CONVEX_URL';
 
-loadEnv();
+export type ConvexClientConfig = {
+  deployment?: string;
+  url?: string;
+};
 
-const connectionString = process.env.DATABASE_URL;
-
-if (!connectionString) {
-  throw new Error('DATABASE_URL is required');
+export function getConvexClientConfig(env: NodeJS.ProcessEnv = process.env): ConvexClientConfig {
+  return {
+    deployment: env[CONVEX_DEPLOYMENT_ENV],
+    url: env[CONVEX_URL_ENV],
+  };
 }
 
-export const pool = new pg.Pool({ connectionString });
-export const db = drizzle(pool, { schema });
+export function hasConvexClientConfig(env: NodeJS.ProcessEnv = process.env): boolean {
+  const config = getConvexClientConfig(env);
+  return Boolean(config.deployment || config.url);
+}
