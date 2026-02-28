@@ -1,3 +1,5 @@
+// Canonical table name list. Replace with defineSchema/defineTable calls
+// when the first Convex function is implemented and a project is provisioned.
 export const convexTables = [
   'users',
   'teams',

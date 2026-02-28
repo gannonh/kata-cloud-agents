@@ -1,5 +1,7 @@
 # KAT-113: Spec Versioning System - Design
 
+> **Stale:** KAT-152 replaced Drizzle/Postgres with Convex. Drizzle-specific guidance in this doc (queries, migrations, schema changes) must be revised before implementation.
+
 **Date:** 2026-02-27
 **Status:** Approved
 **Milestone:** M1: Spec Engine + Single Agent

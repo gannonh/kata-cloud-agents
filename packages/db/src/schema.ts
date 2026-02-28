@@ -1,8 +1,9 @@
 /**
- * Convex-oriented schema contract used by @kata/db exports.
+ * Convex table name contract used by @kata/db exports.
  *
- * This intentionally avoids Drizzle/Postgres bindings while the data layer
- * migration moves the package onto Convex.
+ * The canonical table list also appears in convex/schema.ts for the
+ * Convex runtime. A sync test in schema-contract.test.ts asserts
+ * both copies stay identical.
  */
 export const convexTables = [
   'users',

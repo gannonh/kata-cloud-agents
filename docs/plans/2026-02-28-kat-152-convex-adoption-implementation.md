@@ -1,7 +1,5 @@
 # Convex Adoption Migration Implementation Plan
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
-
 **Goal:** Replace the current Postgres/Drizzle scaffold with a Convex-based baseline so future milestone work starts from the adopted data layer.
 
 **Architecture:** Keep `packages/db` as the repo’s data-layer package, but repurpose it from a SQL migration package into the Convex integration boundary. Update test contracts first, then replace package tooling and source files, then remove Postgres-specific infrastructure assumptions, and finally revise project documentation to reflect the new backend direction.

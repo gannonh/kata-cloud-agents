@@ -27,7 +27,6 @@
     "db:codegen": "convex codegen --config ./convex.json"
   },
   "dependencies": {
-    "dotenv": "^17.3.1",
     "convex": "^1.32.0"
   },
   "devDependencies": {
