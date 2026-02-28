@@ -36,14 +36,8 @@ jobs:
           restore-keys: |
             turbo-${{ runner.os }}-
 
-      - run: pnpm lint
-      - run: pnpm lint:biome
-      - run: pnpm typecheck
-      - run: pnpm test
+      - run: pnpm ci:checks
       - run: pnpm build
-
-      - name: Coverage gate
-        run: pnpm coverage
 
       - name: Install Playwright browsers
         run: pnpm exec playwright install --with-deps chromium
