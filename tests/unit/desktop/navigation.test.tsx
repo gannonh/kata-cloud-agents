@@ -12,7 +12,10 @@ describe('desktop app navigation', () => {
 
   test('renders breadcrumb scaffolding for the active route', () => {
     render(<App />);
-    expect(screen.getByRole('navigation', { name: /breadcrumbs/i })).toBeInTheDocument();
+    const breadcrumbs = screen.getByRole('navigation', { name: /breadcrumbs/i });
+    expect(breadcrumbs).toBeInTheDocument();
+    expect(breadcrumbs).toHaveTextContent('Overview');
+    expect(breadcrumbs).toHaveTextContent('Dashboard');
   });
 
   test.each([
@@ -25,5 +28,24 @@ describe('desktop app navigation', () => {
     render(<App />);
     fireEvent.click(screen.getByRole('link', { name: new RegExp(name, 'i') }));
     expect(screen.getByRole('heading', { name })).toBeInTheDocument();
+  });
+
+  test('uses long breadcrumb label for Specs route', () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole('link', { name: /specs/i }));
+
+    const breadcrumbs = screen.getByRole('navigation', { name: /breadcrumbs/i });
+    expect(breadcrumbs).toHaveTextContent('Spec Editor');
+    expect(breadcrumbs).not.toHaveTextContent('Overview / Specs');
+  });
+
+  test('builds breadcrumb parent chain for spec detail route', () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole('link', { name: /specs/i }));
+    fireEvent.click(screen.getByRole('link', { name: /open spec detail/i }));
+
+    const breadcrumbs = screen.getByRole('navigation', { name: /breadcrumbs/i });
+    expect(breadcrumbs).toHaveTextContent('Spec Editor');
+    expect(breadcrumbs).toHaveTextContent('Spec Detail');
   });
 });

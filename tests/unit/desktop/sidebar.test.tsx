@@ -40,6 +40,14 @@ describe('Sidebar', () => {
     expect(screen.getByRole('link', { name: /settings/i })).toBeInTheDocument();
   });
 
+  test('groups navigation by command-center and admin sections', () => {
+    renderSidebar();
+    const commandCenter = screen.getByText('Command Center');
+    const administration = screen.getByText('Administration');
+
+    expect(commandCenter.compareDocumentPosition(administration)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
   test('dashboard link points to root path', () => {
     renderSidebar();
     const link = screen.getByRole('link', { name: /dashboard/i });
@@ -72,6 +80,7 @@ describe('Sidebar', () => {
     renderSidebar();
     expect(screen.queryByText('Kata Cloud Agents')).not.toBeInTheDocument();
     expect(screen.queryByText('Dashboard')).not.toBeInTheDocument();
+    expect(screen.queryByText('Command Center')).not.toBeInTheDocument();
   });
 
   test('toggle button collapses and expands sidebar', async () => {
