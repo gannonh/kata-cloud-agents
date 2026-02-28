@@ -41,4 +41,22 @@ describe('Layout', () => {
     expect(breadcrumbs).not.toHaveTextContent('Dashboard');
     expect(screen.getByText('child content')).toBeInTheDocument();
   });
+
+  test('renders metadata-driven breadcrumb chain for spec detail routes', () => {
+    renderLayout('/specs/spec-1', '/specs/:specId');
+    const breadcrumbs = screen.getByRole('navigation', { name: /breadcrumbs/i });
+
+    expect(breadcrumbs).toHaveTextContent('Overview');
+    expect(breadcrumbs).toHaveTextContent('Spec Editor');
+    expect(breadcrumbs).toHaveTextContent('Spec Detail');
+  });
+
+  test('uses long-form breadcrumb labels for command-center sections', () => {
+    renderLayout('/agents', '/agents');
+    const breadcrumbs = screen.getByRole('navigation', { name: /breadcrumbs/i });
+
+    expect(breadcrumbs).toHaveTextContent('Overview');
+    expect(breadcrumbs).toHaveTextContent('Agent Monitor');
+    expect(breadcrumbs).not.toHaveTextContent('Agents');
+  });
 });
