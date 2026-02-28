@@ -10,7 +10,10 @@ export function Sidebar() {
   const toggleSidebar = useAppStore((s) => s.toggleSidebar);
 
   return (
-    <nav className={`${collapsed ? 'w-14' : 'w-56'} bg-slate-900 border-r border-slate-800 flex flex-col transition-[width] duration-200`}>
+    <nav
+      aria-label="Primary"
+      className={`${collapsed ? 'w-14' : 'w-56'} bg-slate-900 border-r border-slate-800 flex flex-col transition-[width] duration-200`}
+    >
       <div className="p-4 border-b border-slate-800 flex items-center justify-between">
         {!collapsed && <span className="text-sm font-semibold text-slate-200">Kata Cloud Agents</span>}
         <Button
