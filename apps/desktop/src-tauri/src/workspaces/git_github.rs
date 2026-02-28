@@ -11,16 +11,22 @@ use super::WorkspaceError;
 pub fn create_github_workspace(
     repo_url: &str,
     workspace_name: &str,
+    clone_root_path: Option<String>,
     branch_name: Option<String>,
     base_ref: Option<String>,
     suffix: &str,
     app_data_dir: &Path,
 ) -> Result<PreparedWorkspace, WorkspaceError> {
     let (owner, repo) = parse_github_repo_url(repo_url)?;
-    let cache_repo_path = app_data_dir
-        .join("repo-cache")
-        .join("github")
-        .join(format!("{owner}__{repo}"));
+    let cache_repo_path = clone_root_path
+        .filter(|value| !value.trim().is_empty())
+        .map(|value| Path::new(&value).join(&repo))
+        .unwrap_or_else(|| {
+            app_data_dir
+                .join("repo-cache")
+                .join("github")
+                .join(format!("{owner}__{repo}"))
+        });
 
     if cache_repo_path.exists() {
         run_git_in_dir(&cache_repo_path, &["fetch", "--all", "--prune"])?;
@@ -102,6 +108,7 @@ mod tests {
         let err = create_github_workspace(
             "https://gitlab.com/org/repo",
             "KAT-154",
+            None,
             None,
             None,
             "ab12",

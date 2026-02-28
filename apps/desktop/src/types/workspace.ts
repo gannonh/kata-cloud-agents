@@ -16,11 +16,11 @@ export const WorkspaceSchema = z.object({
   repoRootPath: z.string().min(1),
   worktreePath: z.string().min(1),
   branch: z.string().min(1),
-  baseRef: z.string().optional(),
+  baseRef: z.string().nullish(),
   status: WorkspaceStatusSchema,
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
-  lastOpenedAt: z.string().datetime().optional(),
+  lastOpenedAt: z.string().datetime().nullish(),
 });
 
 export type WorkspaceStatus = z.infer<typeof WorkspaceStatusSchema>;

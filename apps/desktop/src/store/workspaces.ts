@@ -31,7 +31,33 @@ const defaultState = {
 let workspaceClient: WorkspaceClient = defaultWorkspaceClient;
 
 function toErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : 'Unexpected error';
+  if (error instanceof Error && error.message.trim()) {
+    return error.message;
+  }
+
+  if (typeof error === 'string' && error.trim()) {
+    return error;
+  }
+
+  if (error && typeof error === 'object') {
+    const message = Reflect.get(error, 'message');
+    if (typeof message === 'string' && message.trim()) {
+      return message;
+    }
+
+    const nestedError = Reflect.get(error, 'error');
+    if (typeof nestedError === 'string' && nestedError.trim()) {
+      return nestedError;
+    }
+    if (nestedError && typeof nestedError === 'object') {
+      const nestedMessage = Reflect.get(nestedError, 'message');
+      if (typeof nestedMessage === 'string' && nestedMessage.trim()) {
+        return nestedMessage;
+      }
+    }
+  }
+
+  return 'Unexpected error';
 }
 
 export const useWorkspacesStore = create<WorkspacesState>()((set) => ({

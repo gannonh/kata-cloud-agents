@@ -48,6 +48,7 @@ pub struct CreateLocalWorkspaceInput {
 pub struct CreateGitHubWorkspaceInput {
     pub repo_url: String,
     pub workspace_name: String,
+    pub clone_root_path: Option<String>,
     pub branch_name: Option<String>,
     pub base_ref: Option<String>,
 }

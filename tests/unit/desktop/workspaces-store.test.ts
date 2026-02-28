@@ -81,6 +81,7 @@ describe('useWorkspacesStore', () => {
       list: async () => {
         throw new Error('load failed');
       },
+      listGitHubRepos: async () => [],
       createLocal: async () => {
         throw new Error('local failed');
       },
@@ -132,6 +133,9 @@ describe('useWorkspacesStore', () => {
       list: async () => {
         throw 'boom';
       },
+      listGitHubRepos: async () => {
+        throw 'boom';
+      },
       createLocal: async () => {
         throw 'boom';
       },
@@ -155,6 +159,50 @@ describe('useWorkspacesStore', () => {
     resetWorkspacesStore();
 
     await useWorkspacesStore.getState().load();
+    expect(useWorkspacesStore.getState().lastError).toBe('boom');
+  });
+
+  test('extracts message from object-shaped errors', async () => {
+    const objectErrorClient: WorkspaceClient = {
+      list: async () => {
+        throw { message: 'object message' };
+      },
+      listGitHubRepos: async () => [],
+      createLocal: async () => {
+        throw { error: 'top level error field' };
+      },
+      createGitHub: async () => {
+        throw { error: { message: 'nested error message' } };
+      },
+      setActive: async () => {
+        throw {};
+      },
+      getActiveId: async () => null,
+      archive: async () => {
+        throw '';
+      },
+      remove: async () => {
+        throw null;
+      },
+    };
+
+    setWorkspaceClient(objectErrorClient);
+    resetWorkspacesStore();
+
+    await useWorkspacesStore.getState().load();
+    expect(useWorkspacesStore.getState().lastError).toBe('object message');
+
+    await useWorkspacesStore
+      .getState()
+      .createLocal({ repoPath: '/tmp/repo', workspaceName: 'KAT-154' });
+    expect(useWorkspacesStore.getState().lastError).toBe('top level error field');
+
+    await useWorkspacesStore
+      .getState()
+      .createGitHub({ repoUrl: 'https://github.com/org/repo', workspaceName: 'KAT-154' });
+    expect(useWorkspacesStore.getState().lastError).toBe('nested error message');
+
+    await useWorkspacesStore.getState().setActive('ws_missing');
     expect(useWorkspacesStore.getState().lastError).toBe('Unexpected error');
   });
 });

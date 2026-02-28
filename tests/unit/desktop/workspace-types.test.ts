@@ -53,4 +53,24 @@ describe('workspace domain contract', () => {
     expect(parsed.baseRef).toBe('origin/main');
     expect(parsed.lastOpenedAt).toBeTruthy();
   });
+
+  test('accepts null for optional metadata from tauri option serialization', () => {
+    const parsed = WorkspaceSchema.parse({
+      id: 'ws_3',
+      name: 'KAT-154 UI 3',
+      sourceType: 'local',
+      source: '/tmp/repo',
+      repoRootPath: '/tmp/repo',
+      worktreePath: '/tmp/workspaces/ws_3',
+      branch: 'workspace/kat-154-ui-3-ws3',
+      baseRef: null,
+      status: 'ready',
+      createdAt: '2026-02-28T00:00:00.000Z',
+      updatedAt: '2026-02-28T00:00:00.000Z',
+      lastOpenedAt: null,
+    });
+
+    expect(parsed.baseRef).toBeNull();
+    expect(parsed.lastOpenedAt).toBeNull();
+  });
 });

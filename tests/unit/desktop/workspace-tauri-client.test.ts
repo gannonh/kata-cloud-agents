@@ -12,20 +12,37 @@ describe('tauri workspace client', () => {
       repoRootPath: '/tmp/repo',
       worktreePath: '/tmp/repo.worktrees/kat-154',
       branch: 'workspace/kat-154-ws1',
+      baseRef: null,
       status: 'ready',
       createdAt: '2026-02-28T00:00:00.000Z',
       updatedAt: '2026-02-28T00:00:00.000Z',
+      lastOpenedAt: null,
     };
   }
 
   test('maps list command response', async () => {
-    const mockInvoke = vi.fn(async () => [sampleWorkspace()]);
+    const mockInvoke = vi
+      .fn()
+      .mockResolvedValueOnce([sampleWorkspace()])
+      .mockResolvedValueOnce([
+        {
+          nameWithOwner: 'org/repo',
+          url: 'https://github.com/org/repo',
+          isPrivate: true,
+          updatedAt: '2026-02-28T00:00:00.000Z',
+        },
+      ]);
 
     const client = createTauriWorkspaceClient(mockInvoke);
     const list = await client.list();
+    const repos = await client.listGitHubRepos('repo');
 
     expect(mockInvoke).toHaveBeenCalledWith('workspace_list');
+    expect(mockInvoke).toHaveBeenCalledWith('workspace_list_github_repos', {
+      query: 'repo',
+    });
     expect(list[0]?.name).toBe('KAT-154');
+    expect(repos[0]?.nameWithOwner).toBe('org/repo');
   });
 
   test('maps create and lifecycle commands', async () => {
@@ -74,10 +91,12 @@ describe('tauri workspace client', () => {
     const mockInvoke = vi
       .fn()
       .mockResolvedValueOnce([{ name: 'missing required fields' }])
+      .mockResolvedValueOnce([{ url: 123 }])
       .mockResolvedValueOnce(123);
     const client = createTauriWorkspaceClient(mockInvoke);
 
     await expect(client.list()).rejects.toThrow();
+    await expect(client.listGitHubRepos()).rejects.toThrow();
     await expect(client.getActiveId()).rejects.toThrow();
   });
 

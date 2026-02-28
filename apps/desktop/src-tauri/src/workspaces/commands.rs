@@ -1,6 +1,8 @@
 use std::fs;
 use std::path::Path;
+use std::process::Command;
 
+use serde::Serialize;
 use tauri::State;
 use uuid::Uuid;
 
@@ -25,6 +27,126 @@ fn workspace_suffix(workspace_id: &str) -> &str {
         .strip_prefix("ws_")
         .map(|value| &value[..4.min(value.len())])
         .unwrap_or("ws")
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GitHubRepoOption {
+    pub name_with_owner: String,
+    pub url: String,
+    pub is_private: bool,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct GitHubRepoListItem {
+    name_with_owner: String,
+    url: String,
+    is_private: bool,
+    updated_at: Option<String>,
+}
+
+fn normalize_search_tokens(query: &str) -> Vec<String> {
+    query
+        .split_whitespace()
+        .map(|token| token.trim().to_lowercase())
+        .filter(|token| !token.is_empty())
+        .collect()
+}
+
+fn repo_match_score(repo: &GitHubRepoOption, query_tokens: &[String]) -> i32 {
+    if query_tokens.is_empty() {
+        return 1;
+    }
+
+    let name = repo.name_with_owner.to_lowercase();
+    let url = repo.url.to_lowercase();
+    let joined = format!("{name} {url}");
+
+    if !query_tokens.iter().all(|token| joined.contains(token)) {
+        return 0;
+    }
+
+    let mut score = 10;
+    for token in query_tokens {
+        if name == *token || url == *token {
+            score += 150;
+        } else if name.starts_with(token) {
+            score += 80;
+        } else if url.starts_with(token) {
+            score += 60;
+        } else if name.contains(token) {
+            score += 30;
+        } else if url.contains(token) {
+            score += 20;
+        }
+    }
+    score
+}
+
+#[tauri::command]
+pub fn workspace_list_github_repos(query: Option<String>) -> Result<Vec<GitHubRepoOption>, String> {
+    let output = Command::new("gh")
+        .args([
+            "repo",
+            "list",
+            "--limit",
+            "200",
+            "--source",
+            "--no-archived",
+            "--json",
+            "nameWithOwner,url,isPrivate,updatedAt",
+        ])
+        .output()
+        .map_err(|_| {
+            "GitHub CLI not found. Install gh and run `gh auth login` to use repository suggestions."
+                .to_string()
+        })?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+        if stderr.is_empty() {
+            return Err(
+                "Unable to load GitHub repositories. Ensure gh is authenticated with `gh auth login`."
+                    .to_string(),
+            );
+        }
+        return Err(format!("Unable to load GitHub repositories: {stderr}"));
+    }
+
+    let raw_items: Vec<GitHubRepoListItem> = serde_json::from_slice(&output.stdout).map_err(|err| {
+        format!("Unable to parse GitHub repository list from gh output: {err}")
+    })?;
+
+    let mut repos: Vec<GitHubRepoOption> = raw_items
+        .into_iter()
+        .map(|item| GitHubRepoOption {
+            name_with_owner: item.name_with_owner,
+            url: item.url,
+            is_private: item.is_private,
+            updated_at: item.updated_at.unwrap_or_default(),
+        })
+        .collect();
+
+    let normalized_tokens = query
+        .as_deref()
+        .map(normalize_search_tokens)
+        .unwrap_or_default();
+
+    repos.sort_by(|left, right| {
+        let left_score = repo_match_score(left, &normalized_tokens);
+        let right_score = repo_match_score(right, &normalized_tokens);
+
+        right_score
+            .cmp(&left_score)
+            .then_with(|| right.updated_at.cmp(&left.updated_at))
+            .then_with(|| left.name_with_owner.cmp(&right.name_with_owner))
+    });
+
+    repos.retain(|repo| repo_match_score(repo, &normalized_tokens) > 0);
+    repos.truncate(20);
+    Ok(repos)
 }
 
 #[tauri::command]
@@ -99,6 +221,7 @@ pub fn workspace_create_github(
     let prepared = create_github_workspace(
         &input.repo_url,
         &input.workspace_name,
+        input.clone_root_path.clone(),
         input.branch_name.clone(),
         input.base_ref.clone(),
         suffix,
@@ -129,6 +252,18 @@ pub fn workspace_create_github(
     store.save().map_err(to_command_error)?;
 
     Ok(workspace)
+}
+
+#[tauri::command]
+pub fn workspace_pick_directory(default_path: Option<String>) -> Result<Option<String>, String> {
+    let mut dialog = rfd::FileDialog::new();
+
+    if let Some(path) = default_path.filter(|value| !value.trim().is_empty()) {
+        dialog = dialog.set_directory(Path::new(&path));
+    }
+
+    let selected = dialog.pick_folder();
+    Ok(selected.map(|path| path.to_string_lossy().to_string()))
 }
 
 #[tauri::command]

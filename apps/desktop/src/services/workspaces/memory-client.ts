@@ -6,6 +6,7 @@ import {
 import type {
   CreateGitHubWorkspaceInput,
   CreateLocalWorkspaceInput,
+  GitHubRepoOption,
   WorkspaceClient,
 } from './types';
 
@@ -68,6 +69,51 @@ export function createMemoryWorkspaceClient(
 
   return {
     list: async () => [...state.workspaces],
+    listGitHubRepos: async (query?: string) => {
+      const candidates = new Map<string, GitHubRepoOption>();
+      for (const workspace of state.workspaces) {
+        if (workspace.sourceType !== 'github') {
+          continue;
+        }
+        let nameWithOwner = workspace.source;
+        try {
+          const parsed = new URL(workspace.source);
+          nameWithOwner = parsed.pathname.replace(/^\/+/, '').replace(/\.git$/i, '');
+        } catch {
+          // Keep best-effort source fallback for memory mode.
+        }
+
+        candidates.set(workspace.source, {
+          nameWithOwner,
+          url: workspace.source,
+          isPrivate: true,
+          updatedAt: workspace.updatedAt,
+        });
+      }
+
+      const fallback: GitHubRepoOption = {
+        nameWithOwner: 'org/repo',
+        url: 'https://github.com/org/repo',
+        isPrivate: true,
+        updatedAt: new Date().toISOString(),
+      };
+      if (!candidates.size) {
+        candidates.set(fallback.url, fallback);
+      }
+
+      const normalizedQuery = query?.trim().toLowerCase();
+      const list = [...candidates.values()];
+      if (!normalizedQuery) {
+        return list.slice(0, 20);
+      }
+
+      return list
+        .filter((repo) => {
+          const haystack = `${repo.nameWithOwner} ${repo.url}`.toLowerCase();
+          return haystack.includes(normalizedQuery);
+        })
+        .slice(0, 20);
+    },
     createLocal: async (input: CreateLocalWorkspaceInput) => {
       const slug = toWorkspaceSlug(input.workspaceName);
       const workspace = upsertWorkspace(state, {
