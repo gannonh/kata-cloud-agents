@@ -72,8 +72,8 @@ Choose Option C with these concrete rules:
 
 The enforcement script (`check:ui-drift`) fails if:
 
-- app-local primitive files are found under `apps/desktop/src` or `apps/web/src` for canonical primitive names (for example: `button`, `input`, `textarea`, `select`, `checkbox`, `radio-group`, `switch`, `badge`, `card`, `tabs`, `dialog`, `popover`, `tooltip`, `table`, `sheet`, `dropdown-menu`, `form`, `skeleton`), or
-- app code imports these primitives from app-local paths instead of shared UI exports.
+- app-local files or directories are found under `apps/desktop/src/components/ui/` or `apps/web/src/components/ui/`, or
+- app code imports or re-exports from app-local `components/ui` paths instead of shared UI exports.
 
 Allowed:
 
@@ -109,7 +109,7 @@ Exceptions:
 ## Risks and Mitigations
 
 - Risk: false positives for legitimate app-local components.
-  - Mitigation: restrict checks to canonical primitive names + import patterns.
+  - Mitigation: restrict checks to `components/ui` path patterns + import/export patterns.
 - Risk: developers bypass local hooks.
   - Mitigation: keep CI required status checks.
 - Risk: `coverage` is slower locally.

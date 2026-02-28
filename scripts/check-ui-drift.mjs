@@ -217,13 +217,26 @@ function parseImportSpecifier(contents, index) {
 }
 
 function parseExportSpecifier(contents, index) {
-  const fromIndex = findKeyword(contents, 'from', index + 'export'.length);
+  let cursor = skipWhitespaceAndComments(contents, index + 'export'.length);
+
+  if (
+    contents.startsWith('type', cursor) &&
+    !isIdentifierCharacter(contents[cursor + 'type'.length])
+  ) {
+    cursor = skipWhitespaceAndComments(contents, cursor + 'type'.length);
+  }
+
+  if (contents[cursor] !== '{' && contents[cursor] !== '*') {
+    return null;
+  }
+
+  const fromIndex = findKeyword(contents, 'from', cursor + 1);
 
   if (fromIndex === -1) {
     return null;
   }
 
-  const cursor = skipWhitespaceAndComments(contents, fromIndex + 'from'.length);
+  cursor = skipWhitespaceAndComments(contents, fromIndex + 'from'.length);
   const parsedString = parseStringLiteral(contents, cursor);
 
   if (!parsedString) {
@@ -231,7 +244,7 @@ function parseExportSpecifier(contents, index) {
   }
 
   return {
-    kind: 'import',
+    kind: 'export',
     specifier: parsedString.value,
     end: parsedString.end,
   };

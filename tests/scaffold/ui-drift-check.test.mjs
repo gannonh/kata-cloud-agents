@@ -231,6 +231,21 @@ withFixture(
 withFixture(
   {
     'apps/web/src/routes/page.tsx':
+      "export { Button } from '@/components/ui/button';\nexport { Card } from '../components/ui/card';\n",
+  },
+  (root) => {
+    const result = runCheck(root);
+    const output = `${result.stdout}\n${result.stderr}`;
+
+    assert.notEqual(result.status, 0, 'expected local ui re-exports to fail');
+    assert.match(output, /forbidden alias export.*@\/components\/ui\/button/i);
+    assert.match(output, /forbidden relative export.*\.\.\/components\/ui\/card/i);
+  },
+);
+
+withFixture(
+  {
+    'apps/web/src/routes/page.tsx':
       "const loadButton = () => `${import('../components/ui/button')}`;\nexport { loadButton };\n",
   },
   (root) => {

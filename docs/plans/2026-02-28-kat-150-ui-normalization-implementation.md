@@ -86,10 +86,11 @@ Create `scripts/check-ui-drift.mjs`:
 - Recursively scan:
   - `apps/desktop/src`
   - `apps/web/src`
-- Detect forbidden local primitive files by canonical basename list (for example: `button`, `input`, `textarea`, `select`, `checkbox`, `radio-group`, `switch`, `badge`, `card`, `tabs`, `dialog`, `popover`, `tooltip`, `table`, `sheet`, `dropdown-menu`, `form`, `skeleton`).
+- Detect forbidden local UI files/directories under `components/ui/` paths.
 - Detect forbidden import patterns:
   - relative imports containing `/components/ui/`
   - alias imports like `@/components/ui/`
+- Detect forbidden re-export patterns using the same `components/ui` path rules.
 - Allow shared imports via `@kata/ui/components/ui/*`.
 - Print each violation with file path and reason.
 - Exit with code `1` when any violation exists; `0` otherwise.
