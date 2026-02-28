@@ -120,18 +120,18 @@ For each `N` in `1..10`:
 
 ## Comparison Matrix
 
-| Shell | Current Fit | Future Command-Center Fit | Nav Flexibility | Content Flexibility | Opinionation Cost | Dependency Cost | Disposition | Notes |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| application-shell1 | High | High | High | High | Low | Medium | Adapt | Best balance of current fit and long-term headroom: standard shadcn sidebar, grouped nav, breadcrumb header, and generic content region. |
-| application-shell2 | High | Medium | High | Medium | Low | Low | Reject | Strong fallback and easiest drop-in, but it removes header context and breadcrumb affordances that help a denser desktop command center scale. |
-| application-shell3 | Medium | Low | Medium | Medium | Medium | Low | Reject | Horizontal top-nav is simple, but it gives up the persistent desktop sidebar and compresses future operational navigation into header menus. |
-| application-shell4 | Medium | Medium-Low | Medium | Medium | Medium | Low | Reject | Tab-style top navigation is cleaner than shell3, but it still shifts too much IA into the header for a desktop-first control surface. |
-| application-shell5 | Medium-High | Medium-High | High | High | Medium | Medium | Reject | Good hybrid of top-level tabs plus contextual sidebar, but it introduces a second nav model and more adapter state than the first baseline should carry. |
-| application-shell6 | Medium | Medium-High | High | High | Medium-High | High | Reject | Two-tier module rail can grow into a bigger command center, but it is a larger shell-model jump and costs more to adapt for a same-ticket POC. |
-| application-shell7 | Low | Medium | Medium-High | Medium | High | High | Reject | Three-pane messaging shell has useful density, but presence rails, activity feeds, and chat semantics make it too product-specific. |
-| application-shell8 | Low | Low-Medium | Medium | Medium | High | High | Reject | Email-client folders, list/detail state, and message-centric drawers add too much domain baggage for the desktop app baseline. |
-| application-shell9 | Low | Low | Medium | Low | Very High | Medium-High | Reject | IDE/file-explorer structure directly conflicts with the command-center IA and forces tool-specific panes and file-tree metaphors. |
-| application-shell10 | Low | Medium-Low | Medium | Medium-High | Very High | Very High | Reject | Support-ticket workflow is sophisticated, but command palette, ticket lanes, and agent panes impose helpdesk semantics we do not want in the base shell. |
+| Shell | Current Fit | Future Command-Center Fit | Nav Flexibility | Content Flexibility | Breakpoint Fit | Opinionation Cost | Dependency Cost | Disposition | Notes |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| application-shell1 | High | High | High | High | High | Low | Medium | Adapt | Best balance of current fit and long-term headroom: standard shadcn sidebar, grouped nav, breadcrumb header, and generic content region. |
+| application-shell2 | High | Medium | High | Medium | High | Low | Low | Reject | Strong fallback and easiest drop-in, but it removes header context and breadcrumb affordances that help a denser desktop command center scale. |
+| application-shell3 | Medium | Low | Medium | Medium | Medium-Low | Medium | Low | Reject | Horizontal top-nav is simple, but it gives up the persistent desktop sidebar and compresses future operational navigation into header menus. |
+| application-shell4 | Medium | Medium-Low | Medium | Medium | Medium-Low | Medium | Low | Reject | Tab-style top navigation is cleaner than shell3, but it still shifts too much IA into the header for a desktop-first control surface. |
+| application-shell5 | Medium-High | Medium-High | High | High | Medium | Medium | Medium | Reject | Good hybrid of top-level tabs plus contextual sidebar, but it introduces a second nav model and more adapter state than the first baseline should carry. |
+| application-shell6 | Medium | Medium-High | High | High | Medium | Medium-High | High | Reject | Two-tier module rail can grow into a bigger command center, but it is a larger shell-model jump and costs more to adapt for a same-ticket POC. |
+| application-shell7 | Low | Medium | Medium-High | Medium | Medium | High | High | Reject | Three-pane messaging shell has useful density, but presence rails, activity feeds, and chat semantics make it too product-specific. |
+| application-shell8 | Low | Low-Medium | Medium | Medium | Medium | High | High | Reject | Email-client folders, list/detail state, and message-centric drawers add too much domain baggage for the desktop app baseline. |
+| application-shell9 | Low | Low | Medium | Low | Medium | Very High | Medium-High | Reject | IDE/file-explorer structure directly conflicts with the command-center IA and forces tool-specific panes and file-tree metaphors. |
+| application-shell10 | Low | Medium-Low | Medium | Medium-High | Medium | Very High | Very High | Reject | Support-ticket workflow is sophisticated, but command palette, ticket lanes, and agent panes impose helpdesk semantics we do not want in the base shell. |
 
 ## Ranked Outcome
 
@@ -225,7 +225,7 @@ Mitigations:
 
 ## Recommendation Standard
 
-Use the section below to capture the final ranked selection once the comparison matrix is complete.
+The finalized ranked selection is recorded below.
 
 ## Recommendation
 
