@@ -42,6 +42,25 @@ Rules:
 1. Prefer installing from `@kata-shadcn` before creating new one-off components.
 2. Shared component changes belong in `kata-shadcn` (source repo), not in generated downstream copies.
 3. Pushing to `main` in `kata-shadcn` triggers Vercel deployment; verify install behavior after deploy.
+4. Standardize on registry components/blocks for UI implementation; avoid app-local custom primitives unless no registry option exists.
+5. If no suitable component exists, add it to `kata-shadcn` first, then consume it downstream.
+
+### Selection policy (required)
+
+- For new UI work, agents must evaluate registry options first and document selected component names in the ticket/PR notes.
+- For desktop app layout work, prioritize app shell blocks and related categories before assembling bespoke layouts.
+- Candidate-first categories for app shells: `Navigation`, `Sidebar`, `Settings`, `Content`, `Data & Table`, `Projects`.
+- Do not ship ad-hoc replacement components when an equivalent registry block exists.
+
+### No-preview workflow for blocks
+
+- Current limitation: block preview is limited in the consumer app workflow.
+- Required process when preview is unavailable:
+1. Query `GET /r/index-compact.json` and filter by category/name.
+2. Pull 2-5 candidates via `GET /r/{name}.json` and compare structure/dependencies.
+3. Install top candidate(s) to a temp path (`--path ./tmp/registry-install`) for source inspection.
+4. Choose one and integrate; clean temp artifacts and record rationale in PR notes.
+- For app-shell candidates, include at least one `Sidebar` or `Navigation`-anchored option in the comparison set.
 
 ### Auth
 
