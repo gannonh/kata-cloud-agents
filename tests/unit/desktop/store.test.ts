@@ -7,11 +7,6 @@ describe('useAppStore', () => {
     useAppStore.setState({ sidebarCollapsed: false });
   });
 
-  test('keeps sidebar collapse state in the shared app store', () => {
-    const state = useAppStore.getState();
-    expect(typeof state.sidebarCollapsed).toBe('boolean');
-  });
-
   test('initializes with sidebar expanded', () => {
     const state = useAppStore.getState();
     expect(state.sidebarCollapsed).toBe(false);

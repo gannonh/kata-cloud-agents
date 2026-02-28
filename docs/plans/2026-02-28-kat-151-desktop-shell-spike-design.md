@@ -1,8 +1,8 @@
-# KAT-151 Design: Desktop Shell Spike Evaluation and Proof of Concept
+# KAT-151 Design: Desktop Shell Spike Evaluation and Proof-of-Concept
 
 ## Summary
 
-Evaluate `@kata-shadcn/application-shell1` through `@kata-shadcn/application-shell10` as candidate desktop shell primitives for the Tauri app, rank them against both current implementation needs and the full command-center target in `docs/PROJECT_PLAN.md`, then implement a same-ticket proof of concept shell swap for the selected baseline.
+Evaluate `@kata-shadcn/application-shell1` through `@kata-shadcn/application-shell10` as candidate desktop shell primitives for the Tauri app, rank them against both current implementation needs and the full command-center target in `docs/PROJECT_PLAN.md`, then implement a same-ticket proof-of-concept shell swap for the selected baseline.
 
 ## Context
 
@@ -23,7 +23,7 @@ Evaluate `@kata-shadcn/application-shell1` through `@kata-shadcn/application-she
 - Use the no-preview registry workflow with temp installs for direct source inspection.
 - Produce a ranked recommendation with explicit adopt/adapt/reject guidance.
 - Select one shell baseline that fits both the current desktop app and the broader command-center roadmap.
-- Land a same-ticket proof of concept shell swap for the chosen baseline.
+- Land a same-ticket proof-of-concept shell swap for the chosen baseline.
 - Allow small shell-level navigation/state adjustments if the chosen primitive requires them.
 
 ## Non-Goals
@@ -44,13 +44,13 @@ Evaluate `@kata-shadcn/application-shell1` through `@kata-shadcn/application-she
 - The comparison must consider both:
   - current implementation fit
   - future command-center fit from `docs/PROJECT_PLAN.md`
-- The proof of concept must preserve existing route-driven page rendering and remain scoped to shell-level changes.
+- The proof-of-concept must preserve existing route-driven page rendering and remain scoped to shell-level changes.
 
 ## Approaches Considered
 
-### Option A: Analysis-first, single final proof of concept (recommended)
+### Option A: Analysis-first, single final proof-of-concept (recommended)
 
-Evaluate all ten shells first, choose one winner, then implement one proof of concept shell swap.
+Evaluate all ten shells first, choose one winner, then implement one proof-of-concept shell swap.
 
 Pros:
 - Satisfies the explicit requirement to assess all ten candidates.
@@ -85,7 +85,7 @@ Cons:
 
 Choose Option A.
 
-This ticket should first complete a full comparative assessment across `application-shell1` through `application-shell10`, then implement one proof of concept shell swap for the selected winner. The comparison should use the screenshot set, registry source inspection, and temp installs for evidence, while the implementation should remain tightly scoped to shell composition, navigation mapping, and shell state.
+This ticket should first complete a full comparative assessment across `application-shell1` through `application-shell10`, then implement one proof-of-concept shell swap for the selected winner. The comparison should use the screenshot set, registry source inspection, and temp installs for evidence, while the implementation should remain tightly scoped to shell composition, navigation mapping, and shell state.
 
 ## Assessment Process
 
@@ -174,7 +174,7 @@ The ticket should produce two concrete outputs:
 1. A design artifact documenting the ten-shell comparison, ranking, recommendation, and selected baseline.
 2. A proof-of-concept shell swap in the desktop app using the selected baseline.
 
-The comparison phase stays outside production code except for disposable temp installs. Once a winner is selected, the proof of concept should replace the custom shell composition in `apps/desktop/src/components/Layout.tsx` and adapt surrounding shell code as needed while preserving route-driven page rendering.
+The comparison phase stays outside production code except for disposable temp installs. Once a winner is selected, the proof-of-concept should replace the custom shell composition in `apps/desktop/src/components/Layout.tsx` and adapt surrounding shell code as needed while preserving route-driven page rendering.
 
 ## Component Boundaries
 
@@ -185,7 +185,7 @@ The evaluation phase should use disposable install paths only:
 - ...
 - `./tmp/registry-install/application-shell10`
 
-The proof of concept should limit production changes to shell-level files:
+The proof-of-concept should limit production changes to shell-level files:
 
 - `apps/desktop/src/components/Layout.tsx` as the shell composition root
 - `apps/desktop/src/components/Sidebar.tsx` as an adapter, reduction, or removal point
@@ -266,7 +266,7 @@ That means a shell with slightly higher near-term adaptation cost can still rank
 - For each rejected shell, record the rejection reason.
 - For the selected baseline, record whether it should be adopted as-is, adapted with defined deltas, or rejected.
 
-### Proof of Concept Deliverable
+### Proof-of-Concept Deliverable
 
 - Verify the desktop app still renders all existing routes.
 - Verify the chosen shell's navigation interactions work.
@@ -282,7 +282,7 @@ That means a shell with slightly higher near-term adaptation cost can still rank
 - Comparative compatibility assessment across `application-shell1` through `application-shell10`: covered by the full comparison workflow and rubric.
 - Recommendation with preferred candidate(s), rationale, and adopt/adapt/reject guidance: covered by the ranked recommendation standard.
 - Implementation checklist and migration steps if adopted/adapted: to be produced in the follow-on implementation plan.
-- Same-ticket proof of concept shell swap: explicitly included as a required output.
+- Same-ticket proof-of-concept shell swap: explicitly included as a required output.
 - Full-project scope, not just current implementation: enforced by the requirement to assess every candidate against `docs/PROJECT_PLAN.md`.
 
 ## Verification

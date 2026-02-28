@@ -32,18 +32,18 @@
 ```md
 ## Comparison Matrix
 
-| Shell | Current Fit | Future Command-Center Fit | Nav Flexibility | Content Flexibility | Opinionation Cost | Dependency Cost | Disposition | Notes |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| application-shell1 | TBD | TBD | TBD | TBD | TBD | TBD | TBD | |
-| application-shell2 | TBD | TBD | TBD | TBD | TBD | TBD | TBD | |
-| application-shell3 | TBD | TBD | TBD | TBD | TBD | TBD | TBD | |
-| application-shell4 | TBD | TBD | TBD | TBD | TBD | TBD | TBD | |
-| application-shell5 | TBD | TBD | TBD | TBD | TBD | TBD | TBD | |
-| application-shell6 | TBD | TBD | TBD | TBD | TBD | TBD | TBD | |
-| application-shell7 | TBD | TBD | TBD | TBD | TBD | TBD | TBD | |
-| application-shell8 | TBD | TBD | TBD | TBD | TBD | TBD | TBD | |
-| application-shell9 | TBD | TBD | TBD | TBD | TBD | TBD | TBD | |
-| application-shell10 | TBD | TBD | TBD | TBD | TBD | TBD | TBD | |
+| Shell | Current Fit | Future Command-Center Fit | Breakpoint Fit | Nav Flexibility | Content Flexibility | Opinionation Cost | Dependency Cost | Disposition | Notes |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| application-shell1 | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | |
+| application-shell2 | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | |
+| application-shell3 | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | |
+| application-shell4 | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | |
+| application-shell5 | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | |
+| application-shell6 | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | |
+| application-shell7 | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | |
+| application-shell8 | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | |
+| application-shell9 | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | |
+| application-shell10 | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | |
 ```
 
 **Step 2: Verify registry credentials are available**
@@ -135,8 +135,16 @@ Replace placeholders with a concrete decision:
 
 **Step 4: Remove rejected temp installs only after the winner is chosen**
 
-Run: `rm -rf tmp/registry-install/application-shell{1,2,3,4,5,6,7,8,9,10}`
-Expected: temp inspection artifacts are removed; any code copied intentionally for the POC should be reintroduced in production paths separately
+Run:
+
+```bash
+# Replace X with the winning shell number.
+for n in 1 2 3 4 5 6 7 8 9 10; do
+  [ "$n" != "X" ] && rm -rf "tmp/registry-install/application-shell${n}"
+done
+```
+
+Expected: rejected temp inspection artifacts are removed while the selected shell's temp install remains available for implementation reference
 
 **Step 5: Commit the completed assessment**
 
