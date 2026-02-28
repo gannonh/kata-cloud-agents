@@ -122,16 +122,29 @@ For each `N` in `1..10`:
 
 | Shell | Current Fit | Future Command-Center Fit | Nav Flexibility | Content Flexibility | Opinionation Cost | Dependency Cost | Disposition | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| application-shell1 | TBD | TBD | TBD | TBD | TBD | TBD | TBD | |
-| application-shell2 | TBD | TBD | TBD | TBD | TBD | TBD | TBD | |
-| application-shell3 | TBD | TBD | TBD | TBD | TBD | TBD | TBD | |
-| application-shell4 | TBD | TBD | TBD | TBD | TBD | TBD | TBD | |
-| application-shell5 | TBD | TBD | TBD | TBD | TBD | TBD | TBD | |
-| application-shell6 | TBD | TBD | TBD | TBD | TBD | TBD | TBD | |
-| application-shell7 | TBD | TBD | TBD | TBD | TBD | TBD | TBD | |
-| application-shell8 | TBD | TBD | TBD | TBD | TBD | TBD | TBD | |
-| application-shell9 | TBD | TBD | TBD | TBD | TBD | TBD | TBD | |
-| application-shell10 | TBD | TBD | TBD | TBD | TBD | TBD | TBD | |
+| application-shell1 | High | High | High | High | Low | Medium | Adapt | Best balance of current fit and long-term headroom: standard shadcn sidebar, grouped nav, breadcrumb header, and generic content region. |
+| application-shell2 | High | Medium | High | Medium | Low | Low | Reject | Strong fallback and easiest drop-in, but it removes header context and breadcrumb affordances that help a denser desktop command center scale. |
+| application-shell3 | Medium | Low | Medium | Medium | Medium | Low | Reject | Horizontal top-nav is simple, but it gives up the persistent desktop sidebar and compresses future operational navigation into header menus. |
+| application-shell4 | Medium | Medium-Low | Medium | Medium | Medium | Low | Reject | Tab-style top navigation is cleaner than shell3, but it still shifts too much IA into the header for a desktop-first control surface. |
+| application-shell5 | Medium-High | Medium-High | High | High | Medium | Medium | Reject | Good hybrid of top-level tabs plus contextual sidebar, but it introduces a second nav model and more adapter state than the first baseline should carry. |
+| application-shell6 | Medium | Medium-High | High | High | Medium-High | High | Reject | Two-tier module rail can grow into a bigger command center, but it is a larger shell-model jump and costs more to adapt for a same-ticket POC. |
+| application-shell7 | Low | Medium | Medium-High | Medium | High | High | Reject | Three-pane messaging shell has useful density, but presence rails, activity feeds, and chat semantics make it too product-specific. |
+| application-shell8 | Low | Low-Medium | Medium | Medium | High | High | Reject | Email-client folders, list/detail state, and message-centric drawers add too much domain baggage for the desktop app baseline. |
+| application-shell9 | Low | Low | Medium | Low | Very High | Medium-High | Reject | IDE/file-explorer structure directly conflicts with the command-center IA and forces tool-specific panes and file-tree metaphors. |
+| application-shell10 | Low | Medium-Low | Medium | Medium-High | Very High | Very High | Reject | Support-ticket workflow is sophisticated, but command palette, ticket lanes, and agent panes impose helpdesk semantics we do not want in the base shell. |
+
+## Ranked Outcome
+
+1. `application-shell1`
+2. `application-shell2`
+3. `application-shell5`
+4. `application-shell6`
+5. `application-shell4`
+6. `application-shell3`
+7. `application-shell7`
+8. `application-shell8`
+9. `application-shell10`
+10. `application-shell9`
 
 ### Comparison Rubric
 
@@ -212,16 +225,29 @@ Mitigations:
 
 ## Recommendation Standard
 
-Use the placeholder below to capture the final ranked selection once the comparison matrix is complete.
+Use the section below to capture the final ranked selection once the comparison matrix is complete.
 
 ## Recommendation
 
-- Preferred candidate: TBD
-- Decision: adopt | adapt | reject
+- Preferred candidate: `@kata-shadcn/application-shell1`
+- Decision: adapt
+- Why:
+  - It is the closest structural match to the current `Layout` + `Sidebar` split.
+  - It keeps the persistent desktop sidebar that the command-center roadmap needs.
+  - It adds breadcrumb/header scaffolding without forcing a second pane, top-nav IA, or product-specific workflow chrome.
 - Required deltas:
-  - TBD
+  - Replace the demo `sidebarData` tree with `routes`-derived navigation groups and `NavLink` wiring.
+  - Swap the placeholder content panel for the existing `Outlet` so `MemoryRouter` remains the routing boundary.
+  - Connect collapse behavior to `useAppStore` so the app keeps one desktop-first sidebar state model.
+  - Trim demo footer/header content to Kata branding and route-derived breadcrumbs rather than placeholder account copy.
+  - Keep the shell generic: no extra panes, module rails, or workflow-specific drawers in the POC.
 - Rejected candidates:
-  - TBD
+  - `application-shell2`: acceptable fallback, but too thin on header context for the long-term command-center shell.
+  - `application-shell5`: solid hybrid, but dual navigation (top tabs plus contextual sidebar) adds unnecessary complexity for the first baseline.
+  - `application-shell6`: strongest future-facing alternative, but the two-tier module rail is too large a state and interaction change for the same-ticket POC.
+  - `application-shell3` and `application-shell4`: top-navigation patterns do not scale as well as a persistent desktop sidebar for dense operational workflows.
+  - `application-shell7`, `application-shell8`, and `application-shell10`: each is anchored to messaging, email, or support-helpdesk semantics that would leak into product IA.
+  - `application-shell9`: IDE/file-explorer behavior is explicitly incompatible with the target command-center information architecture.
 
 The selected baseline should not be the shell that is merely easiest to drop into the current thin app today. It should be the shell that offers the best balance of:
 
