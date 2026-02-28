@@ -32,6 +32,13 @@ Git worktrees are used to manage multiple concurrent branches:
 - Current experiment: use Pencil MCP for rapid UI exploration/prototyping first, then implement in app code after review.
 - Prefer codifying reusable UI in shared packages only when it does not conflict with active milestone sequencing and branch concurrency constraints.
 
+## Local Verification
+
+- Run `pnpm ci:checks` before pushing frontend or CI-affecting changes. This is the local parity gate for the main verify job.
+- A repo-managed `.githooks/pre-push` hook runs `pnpm ci:checks` automatically and blocks the push on failure.
+- Install or refresh the hook configuration with `pnpm hooks:install` if the hook stops running.
+- Launch the desktop app from the monorepo root with `pnpm desktop:tauri:dev` instead of changing directories into `apps/desktop`.
+
 ## Private Component Registry (React Source of Truth)
 
 Private shadcn-compatible component registry:

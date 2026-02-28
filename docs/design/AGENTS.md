@@ -14,3 +14,12 @@ Use this process for UI work so design and implementation stay in sync:
 Scope ownership:
 - Pencil owns layout, spacing, typography, and visual states.
 - Code owns behavior, data, routing, and accessibility behavior.
+
+## Local Dev Workflow
+
+Use the repo-root commands during implementation and review:
+
+1. Run `pnpm ci:checks` before pushing. This mirrors the main CI verify gate locally.
+2. The repo-managed `.githooks/pre-push` hook runs `pnpm ci:checks` automatically and blocks pushes on failures.
+3. If hooks stop firing, run `pnpm hooks:install` to restore `core.hooksPath`.
+4. Launch the desktop app from the repo root with `pnpm desktop:tauri:dev`.
