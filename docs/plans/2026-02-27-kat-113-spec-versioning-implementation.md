@@ -1,6 +1,6 @@
 # KAT-113: Spec Versioning System Implementation Plan
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
+> **Stale:** KAT-152 replaced Drizzle/Postgres with Convex. Drizzle-specific guidance in this doc (ORM calls, migrations, DATABASE_URL) must be revised before implementation.
 
 **Goal:** Add immutable version tracking to specs with create/list/get/diff/restore API endpoints, structured field-level diffing, and a desktop UI for browsing version history.
 
