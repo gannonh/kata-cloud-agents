@@ -11,6 +11,13 @@ assert.ok(pkg.scripts.build, 'root build script missing');
 assert.ok(pkg.scripts.lint, 'root lint script missing');
 assert.ok(pkg.scripts.typecheck, 'root typecheck script missing');
 assert.ok(pkg.scripts.test, 'root test script missing');
+assert.equal(pkg.scripts['check:ui-drift'], 'node scripts/check-ui-drift.mjs');
+assert.equal(
+  pkg.scripts['ci:checks'],
+  'pnpm lint && pnpm lint:biome && pnpm typecheck && pnpm test && pnpm coverage && pnpm check:ui-drift',
+);
+assert.equal(pkg.scripts['desktop:tauri:dev'], 'pnpm --filter @kata/desktop tauri:dev');
+assert.equal(pkg.scripts['hooks:install'], 'node scripts/install-hooks.mjs');
 
 const workspace = fs.readFileSync(new URL('../../pnpm-workspace.yaml', import.meta.url), 'utf8');
 assert.match(workspace, /apps\/\*/, 'apps workspace missing');
