@@ -94,6 +94,9 @@ importers:
       '@kata/realtime-client':
         specifier: workspace:*
         version: link:../../packages/realtime-client
+      '@kata/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       agentation:
         specifier: ^2.2.1
         version: 2.2.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -2119,6 +2122,8 @@ packages:
       react:
         optional: true
       react-dom:
+        optional: true
+
   ajv-formats@3.0.1:
     resolution: {integrity: sha512-8iUql50EUR+uUcdRQ3HDqa6EVyo3docL8g5WJ3FNcWmu62IbkGUue/pEyLBW8VGKKucTPgqeks4fIU1DA4yowQ==}
     peerDependencies:
@@ -5725,6 +5730,7 @@ snapshots:
     optionalDependencies:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
+
   ajv-formats@3.0.1(ajv@8.18.0):
     optionalDependencies:
       ajv: 8.18.0

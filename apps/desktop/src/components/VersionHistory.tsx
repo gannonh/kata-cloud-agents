@@ -1,3 +1,4 @@
+import { Button } from '@kata/ui/components/ui/button';
 import type { SpecVersion } from '../types/versioning';
 
 interface VersionHistoryProps {
@@ -30,6 +31,8 @@ export function VersionHistory({ versions, onSelectVersion, onCompare, onRestore
     );
   }
 
+  const actionButtonClassName = 'h-7 bg-slate-700 px-2 py-0.5 text-xs text-slate-400 hover:bg-slate-700 hover:text-slate-200';
+
   return (
     <div className="flex flex-col gap-2 p-4">
       <h3 className="mb-2 text-sm font-medium text-slate-300">Version History</h3>
@@ -39,13 +42,14 @@ export function VersionHistory({ versions, onSelectVersion, onCompare, onRestore
           className="rounded-lg border border-slate-700 bg-slate-800 p-3 transition-colors hover:border-slate-500"
         >
           <div className="mb-1 flex items-center justify-between">
-            <button
-              type="button"
-              className="text-sm font-medium text-blue-400 hover:text-blue-300"
+            <Button
+              variant="link"
+              size="sm"
+              className="h-auto px-0 py-0"
               onClick={() => onSelectVersion(version.versionNumber)}
             >
               v{version.versionNumber}
-            </button>
+            </Button>
             <span className={`rounded px-1.5 py-0.5 text-xs ${
               version.actorType === 'agent'
                 ? 'bg-purple-900 text-purple-300'
@@ -62,22 +66,24 @@ export function VersionHistory({ versions, onSelectVersion, onCompare, onRestore
             <span className="text-xs text-slate-500">{formatRelativeTime(version.createdAt)}</span>
             <div className="flex gap-1">
               {index < versions.length - 1 ? (
-                <button
-                  type="button"
-                  className="rounded bg-slate-700 px-2 py-0.5 text-xs text-slate-400 hover:text-slate-200"
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className={actionButtonClassName}
                   onClick={() => onCompare(versions[index + 1].versionNumber, version.versionNumber)}
                 >
                   Compare
-                </button>
+                </Button>
               ) : null}
-              <button
-                type="button"
-                className="rounded bg-slate-700 px-2 py-0.5 text-xs text-slate-400 hover:text-slate-200"
+              <Button
+                variant="secondary"
+                size="sm"
+                className={actionButtonClassName}
                 onClick={() => onRestore(version.versionNumber)}
                 aria-label={`Restore version ${version.versionNumber}`}
               >
                 Restore
-              </button>
+              </Button>
             </div>
           </div>
         </div>
