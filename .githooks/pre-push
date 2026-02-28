@@ -1,0 +1,5 @@
+#!/bin/sh
+set -eu
+
+echo "Running local CI checks before push..."
+pnpm ci:checks

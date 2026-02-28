@@ -12,7 +12,12 @@
     "coverage": "vitest run --config vitest.config.ts --coverage",
     "test:e2e": "pnpm vitest run --config vitest.e2e.config.ts && playwright test",
     "lint:biome": "biome check .",
-    "check": "pnpm lint && pnpm typecheck && pnpm test"
+    "check:ui-drift": "node scripts/check-ui-drift.mjs",
+    "ci:checks": "pnpm lint && pnpm lint:biome && pnpm typecheck && pnpm test && pnpm coverage && pnpm check:ui-drift",
+    "desktop:tauri:dev": "pnpm --filter @kata/desktop tauri:dev",
+    "hooks:install": "node scripts/install-hooks.mjs",
+    "check": "pnpm lint && pnpm typecheck && pnpm test",
+    "prepare": "pnpm hooks:install"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.4",

@@ -13,19 +13,13 @@ assert.match(workflow, /cancel-in-progress:\s*true/, 'cancel-in-progress missing
 
 // Verify job basics
 assert.match(workflow, /pnpm install --frozen-lockfile/, 'frozen install missing');
-assert.match(workflow, /pnpm lint/, 'lint command missing');
-assert.match(workflow, /pnpm typecheck/, 'typecheck command missing');
-assert.match(workflow, /pnpm test/, 'test command missing');
+assert.match(workflow, /pnpm ci:checks/, 'ci:checks command missing');
 assert.match(workflow, /pnpm build/, 'build command missing');
-assert.match(workflow, /pnpm coverage/, 'coverage gate command missing');
 assert.match(workflow, /playwright install --with-deps chromium/, 'playwright browser install missing');
 assert.match(workflow, /pnpm test:e2e/, 'e2e command missing');
 
 // Timeout
 assert.match(workflow, /timeout-minutes:/, 'timeout-minutes missing');
-
-// Biome lint step
-assert.match(workflow, /biome|lint:biome/, 'biome lint step missing');
 
 // Turbo cache
 assert.match(workflow, /\.turbo/, 'Turbo cache path missing');

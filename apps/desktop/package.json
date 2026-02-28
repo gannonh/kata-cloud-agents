@@ -13,6 +13,7 @@
     "tauri:build": "tauri build"
   },
   "dependencies": {
+    "@kata/ui": "workspace:*",
     "@kata/realtime-client": "workspace:*",
     "agentation": "^2.2.1",
     "lucide-react": "^0.575.0",

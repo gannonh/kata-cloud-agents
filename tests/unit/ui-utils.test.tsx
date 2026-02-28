@@ -34,6 +34,27 @@ describe('shared button component', () => {
     expect(onClick).toHaveBeenCalledTimes(1);
   });
 
+  test('renders ghost, secondary, and link variants', () => {
+    render(
+      <>
+        <Button variant="ghost">Ghost</Button>
+        <Button variant="secondary">Secondary</Button>
+        <Button variant="link">Link</Button>
+      </>,
+    );
+
+    expect(screen.getByRole('button', { name: 'Ghost' }).className).toContain('hover:bg-slate-100');
+    expect(screen.getByRole('button', { name: 'Secondary' }).className).toContain('bg-slate-800');
+    expect(screen.getByRole('button', { name: 'Link' }).className).toContain('underline-offset-4');
+  });
+
+  test('renders icon size classes', () => {
+    render(<Button size="icon" aria-label="Icon button" />);
+    const btn = screen.getByRole('button', { name: 'Icon button' });
+    expect(btn.className).toContain('h-10');
+    expect(btn.className).toContain('w-10');
+  });
+
   test('forwards refs', () => {
     const ref = React.createRef<HTMLButtonElement>();
     render(<Button ref={ref}>Ref Button</Button>);
