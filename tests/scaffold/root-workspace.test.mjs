@@ -18,6 +18,12 @@ assert.equal(
 );
 assert.equal(pkg.scripts['desktop:tauri:dev'], 'pnpm --filter @kata/desktop tauri:dev');
 assert.equal(pkg.scripts['hooks:install'], 'node scripts/install-hooks.mjs');
+assert.equal(pkg.scripts.prepare, 'pnpm hooks:install');
+assert.ok(fs.existsSync(new URL('../../.githooks/pre-push', import.meta.url)), 'pre-push hook missing');
+assert.ok(
+  fs.existsSync(new URL('../../scripts/install-hooks.mjs', import.meta.url)),
+  'install-hooks script missing',
+);
 
 const workspace = fs.readFileSync(new URL('../../pnpm-workspace.yaml', import.meta.url), 'utf8');
 assert.match(workspace, /apps\/\*/, 'apps workspace missing');

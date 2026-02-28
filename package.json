@@ -16,7 +16,8 @@
     "ci:checks": "pnpm lint && pnpm lint:biome && pnpm typecheck && pnpm test && pnpm coverage && pnpm check:ui-drift",
     "desktop:tauri:dev": "pnpm --filter @kata/desktop tauri:dev",
     "hooks:install": "node scripts/install-hooks.mjs",
-    "check": "pnpm lint && pnpm typecheck && pnpm test"
+    "check": "pnpm lint && pnpm typecheck && pnpm test",
+    "prepare": "pnpm hooks:install"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.4",
