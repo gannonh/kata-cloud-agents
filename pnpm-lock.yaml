@@ -112,6 +112,9 @@ importers:
       react-router-dom:
         specifier: ~6.20.0
         version: 6.20.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      zod:
+        specifier: ^4.3.6
+        version: 4.3.6
       zustand:
         specifier: ^5.0.11
         version: 5.0.11(@types/react@18.3.28)(react@18.3.1)
