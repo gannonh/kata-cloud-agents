@@ -1,7 +1,5 @@
-export type ConvexHttpRoute = {
-  path: string;
-  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
-  handler: string;
-};
+import { httpRouter } from 'convex/server';
 
-export const convexHttpRoutes: ConvexHttpRoute[] = [];
+const http = httpRouter();
+
+export default http;
