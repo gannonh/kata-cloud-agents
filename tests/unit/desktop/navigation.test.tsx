@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import { describe, expect, test } from 'vitest';
 
 import { App } from '../../../apps/desktop/src/App';
@@ -28,7 +28,8 @@ describe('desktop app navigation', () => {
   ])('navigates to %s page', (name) => {
     render(<App />);
     fireEvent.click(screen.getByRole('link', { name: new RegExp(name, 'i') }));
-    expect(screen.getByRole('heading', { name })).toBeInTheDocument();
+    const main = screen.getByRole('main');
+    expect(within(main).getByRole('heading', { name })).toBeInTheDocument();
   });
 
   test('uses long breadcrumb label for Specs route', () => {

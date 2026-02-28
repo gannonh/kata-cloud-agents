@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { type FormEvent, useEffect, useState } from 'react';
 
 import { isGitHubRepoUrl } from '../types/workspace';
 import { useWorkspacesStore } from '../store/workspaces';
@@ -186,7 +186,7 @@ export function Workspaces() {
                 <div>
                   <p className="font-medium text-slate-100">{workspace.name}</p>
                   <p className="text-xs text-slate-400">
-                    {workspace.branch} · {workspace.sourceType}
+                    {workspace.branch} · {workspace.sourceType} · {workspace.status}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
