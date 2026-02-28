@@ -1,6 +1,16 @@
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
 
+const uiButtonPath = fileURLToPath(new URL('./packages/ui/src/components/ui/button.tsx', import.meta.url));
+const uiUtilsPath = fileURLToPath(new URL('./packages/ui/src/lib/utils.ts', import.meta.url));
+
 export default defineConfig({
+  resolve: {
+    alias: {
+      '@kata/ui/components/ui/button': uiButtonPath,
+      '@kata/ui/lib/utils': uiUtilsPath,
+    },
+  },
   test: {
     environment: 'jsdom',
     setupFiles: ['./tests/unit/setup.ts'],

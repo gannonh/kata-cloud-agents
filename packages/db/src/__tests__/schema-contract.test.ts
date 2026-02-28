@@ -45,4 +45,11 @@ describe('convex scaffold contract', () => {
     expect(clientSource).not.toContain('new pg.Pool');
     expect(clientSource).not.toContain('drizzle(');
   });
+
+  it('replaces drizzle schema exports with convex-safe schema exports', () => {
+    const schemaSource = fs.readFileSync(path.join(packageRoot, 'src/schema.ts'), 'utf8');
+
+    expect(schemaSource).not.toContain('drizzle-orm');
+    expect(schemaSource).toContain('convexTables');
+  });
 });
