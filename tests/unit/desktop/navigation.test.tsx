@@ -23,6 +23,7 @@ describe('desktop app navigation', () => {
     ['Agents'],
     ['Artifacts'],
     ['Fleet'],
+    ['Workspaces'],
     ['Settings'],
   ])('navigates to %s page', (name) => {
     render(<App />);
