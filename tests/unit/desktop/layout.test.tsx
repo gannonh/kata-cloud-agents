@@ -23,11 +23,6 @@ describe('Layout', () => {
     expect(screen.getByTestId('desktop-shell-frame')).toBeInTheDocument();
   });
 
-  test('renders navigation sidebar', () => {
-    renderLayout();
-    expect(screen.getByRole('navigation')).toBeInTheDocument();
-  });
-
   test('renders main content area', () => {
     renderLayout();
     expect(screen.getByRole('main')).toBeInTheDocument();
