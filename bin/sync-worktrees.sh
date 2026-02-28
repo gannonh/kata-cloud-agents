@@ -15,16 +15,21 @@ errors=0
 die() { echo "FATAL: $*" >&2; exit 1; }
 warn() { echo "ERROR: $*" >&2; errors=$((errors + 1)); }
 
-# -- Step 1: Pull main from GitHub ---------------------------------------
+# -- Step 1: Switch main checkout to main and pull -----------------------
+echo "==> Switching $MAIN_DIR to main"
+if ! git -C "$MAIN_DIR" switch main 2>&1; then
+  die "switch to main failed"
+fi
+
 echo "==> Pulling main"
-if ! git -C "$MAIN_DIR" pull origin main 2>&1; then
+if ! git -C "$MAIN_DIR" pull --ff-only origin main 2>&1; then
   die "pull failed"
 fi
 
 target_sha=$(git -C "$MAIN_DIR" rev-parse HEAD)
 echo "    main is at ${target_sha:0:7}"
 
-# -- Step 2: Reset each worktree's standby branch to main ----------------
+# -- Step 2: Switch each worktree to its standby branch and pull ---------
 for wt in "${WORKTREES[@]}"; do
   wt_path="$WT_DIR/$wt"
   branch="${wt}-standby"
@@ -39,15 +44,23 @@ for wt in "${WORKTREES[@]}"; do
     continue
   fi
 
-  current=$(git -C "$wt_path" branch --show-current)
-  if [ "$current" != "$branch" ]; then
-    warn "$wt: on branch '$current', expected '$branch' - skipping"
+  if ! git -C "$wt_path" show-ref --verify --quiet "refs/heads/$branch"; then
+    warn "$wt: branch '$branch' not found - skipping"
     continue
   fi
 
-  echo "==> Resetting $wt"
-  if ! git -C "$wt_path" reset --hard main 2>&1; then
-    warn "$wt: reset failed"
+  current=$(git -C "$wt_path" branch --show-current)
+  if [ "$current" != "$branch" ]; then
+    echo "==> Switching $wt to $branch"
+    if ! git -C "$wt_path" switch "$branch" 2>&1; then
+      warn "$wt: switch failed"
+      continue
+    fi
+  fi
+
+  echo "==> Pulling $wt"
+  if ! git -C "$wt_path" pull --ff-only 2>&1; then
+    warn "$wt: pull failed"
     continue
   fi
 
@@ -65,5 +78,5 @@ if [ "$errors" -gt 0 ]; then
   echo "FAILED: $errors error(s) above. Fix them before starting work."
   exit 1
 else
-  echo "All worktrees synced to main (${target_sha:0:7})."
+  echo "All worktrees switched to standby and synced to main (${target_sha:0:7})."
 fi
