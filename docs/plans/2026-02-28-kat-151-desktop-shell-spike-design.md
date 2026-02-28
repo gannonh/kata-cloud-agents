@@ -212,6 +212,8 @@ Mitigations:
 
 ## Recommendation Standard
 
+Use the placeholder below to capture the final ranked selection once the comparison matrix is complete.
+
 ## Recommendation
 
 - Preferred candidate: TBD
