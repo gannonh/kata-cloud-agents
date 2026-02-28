@@ -253,3 +253,27 @@ UI behavior:
 ## Recommendation
 
 Approve this design as the implementation baseline. On approval, move directly to `writing-plans` and produce a concrete execution plan with file-by-file tasks and verification gates.
+
+## Implemented Evidence (2026-02-28)
+
+- Workspace lifecycle now implemented in desktop/Tauri commands:
+  - `workspace_list`
+  - `workspace_get_active_id`
+  - `workspace_set_active`
+  - `workspace_create_local`
+  - `workspace_create_github`
+  - `workspace_archive`
+  - `workspace_delete`
+- Local and GitHub workspace creation flows enforce isolated worktree boundaries and reject non-`github.com` remote URLs for GitHub mode.
+- Sidebar contains a dedicated `Workspaces` section with active route styling.
+- Workspaces page supports:
+  - local/GitHub create modes
+  - validation + error display
+  - activate/archive/remove actions
+- User-managed workspace flows remain scoped to user-visible workspaces; no agent-internal workspace UI was introduced.
+
+### Verification Run
+
+- `cd apps/desktop/src-tauri && cargo test -- --nocapture`
+- `pnpm exec vitest run tests/unit/desktop/workspace-types.test.ts tests/unit/desktop/workspace-memory-client.test.ts tests/unit/desktop/workspace-tauri-client.test.ts tests/unit/desktop/workspace-client-index.test.ts tests/unit/desktop/workspaces-store.test.ts tests/unit/desktop/workspaces-page.test.tsx tests/unit/desktop/sidebar.test.tsx tests/unit/desktop/navigation.test.tsx tests/unit/desktop/routes.test.ts`
+- `pnpm ci:checks`
