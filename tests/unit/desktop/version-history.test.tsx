@@ -98,6 +98,24 @@ describe('VersionHistory', () => {
     expect(onCompare).toHaveBeenCalledWith(1, 2);
   });
 
+  it('uses visible hover contrast for action buttons', () => {
+    render(
+      <VersionHistory
+        versions={mockVersions}
+        onSelectVersion={() => {}}
+        onCompare={() => {}}
+        onRestore={() => {}}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: 'Compare' })).toHaveClass('hover:bg-slate-600');
+
+    for (const button of screen.getAllByRole('button', { name: /restore/i })) {
+      expect(button).toHaveClass('hover:bg-slate-600');
+      expect(button).not.toHaveClass('hover:bg-slate-700');
+    }
+  });
+
   it('renders fallback summary and day-based relative time', () => {
     const now = new Date('2026-03-01T12:00:00Z');
     vi.useFakeTimers();

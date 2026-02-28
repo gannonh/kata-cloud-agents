@@ -60,6 +60,7 @@ Choose Option C with these concrete rules:
    - `pnpm lint`
    - `pnpm lint:biome`
    - `pnpm typecheck`
+   - `pnpm test`
    - `pnpm coverage`
    - `pnpm check:ui-drift`
 2. Root `desktop:tauri:dev` runs:

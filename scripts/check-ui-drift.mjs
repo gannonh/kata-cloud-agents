@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import process from 'node:process';
 
 const SCAN_DIRS = ['apps/desktop/src', 'apps/web/src'];
 const IMPORT_FILE_EXTENSIONS = new Set([
@@ -35,13 +36,17 @@ function parseArgs(argv) {
   return { root };
 }
 
+function normalizePath(relativePath) {
+  return relativePath.split(path.sep).join('/');
+}
+
 function isLocalUiFile(relativePath) {
-  const normalizedPath = relativePath.split(path.sep).join('/');
+  const normalizedPath = normalizePath(relativePath);
   return normalizedPath.includes('/components/ui/');
 }
 
 function isLocalUiDirectory(relativePath) {
-  const normalizedPath = relativePath.split(path.sep).join('/');
+  const normalizedPath = normalizePath(relativePath);
   return normalizedPath.includes('/components/ui/');
 }
 

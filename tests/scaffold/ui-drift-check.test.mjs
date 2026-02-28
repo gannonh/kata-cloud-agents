@@ -86,6 +86,20 @@ withFixture(
 
 withFixture(
   {
+    'apps/web/src/routes/page.tsx':
+      String.raw`const pattern = /import .* from '@\/components\/ui\/button'/;
+export { pattern };
+`,
+  },
+  (root) => {
+    const result = runCheck(root);
+
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+  },
+);
+
+withFixture(
+  {
     'apps/desktop/src/components/ui/button.tsx': 'export const Button = null;\n',
   },
   (root) => {

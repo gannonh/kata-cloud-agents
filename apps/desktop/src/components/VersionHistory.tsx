@@ -31,7 +31,7 @@ export function VersionHistory({ versions, onSelectVersion, onCompare, onRestore
     );
   }
 
-  const actionButtonClassName = 'h-7 bg-slate-700 px-2 py-0.5 text-xs text-slate-400 hover:bg-slate-700 hover:text-slate-200';
+  const actionButtonClassName = 'h-7 bg-slate-700 px-2 py-0.5 text-xs text-slate-400 hover:bg-slate-600 hover:text-slate-200';
 
   return (
     <div className="flex flex-col gap-2 p-4">

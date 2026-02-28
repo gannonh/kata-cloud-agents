@@ -10,6 +10,8 @@
 
 ---
 
+## Implementation Tasks
+
 ### Task 1: Add Root Command Contracts (scripts + scaffold assertions)
 
 **Files:**
@@ -311,4 +313,3 @@ git commit -m "docs(plan): add KAT-150 verification notes"
 ```bash
 git push -u origin feature/kat-150-desktop-first-ui-normalization-standardize-on-kata-shadcn
 ```
-
