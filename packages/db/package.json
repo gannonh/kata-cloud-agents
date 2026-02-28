@@ -22,22 +22,16 @@
     "lint": "eslint src/",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "db:generate": "drizzle-kit generate",
-    "db:migrate": "tsx src/migrate.ts",
-    "db:studio": "drizzle-kit studio",
-    "db:up": "docker compose -f ../../containers/docker-compose.yml up -d",
-    "db:down": "docker compose -f ../../containers/docker-compose.yml down",
-    "db:smoke": "node scripts/migration-smoke.mjs"
+    "db:dev": "convex dev --config ./convex.json",
+    "db:deploy": "convex deploy --config ./convex.json",
+    "db:codegen": "convex codegen --config ./convex.json"
   },
   "dependencies": {
     "dotenv": "^17.3.1",
-    "drizzle-orm": "^0.45.1",
-    "pg": "^8.19.0"
+    "convex": "^1.32.0"
   },
   "devDependencies": {
     "@types/node": "^25.3.2",
-    "@types/pg": "^8.16.0",
-    "drizzle-kit": "^0.31.9",
     "tsx": "^4.21.0",
     "vitest": "^3.2.4"
   }

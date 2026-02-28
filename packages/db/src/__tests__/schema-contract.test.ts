@@ -1,101 +1,55 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import {
-  teamRoleEnum,
-  specStatusEnum,
-  agentRunStatusEnum,
-  taskStatusEnum,
-  actorTypeEnum,
-  users,
-  teams,
-  teamMembers,
-  specs,
-  specVersions,
-  agentRuns,
-  tasks,
-  artifacts,
-  auditLog,
-  apiKeys,
-} from '../schema.js';
-
-describe('db enums', () => {
-  it('defines expected enum values', () => {
-    expect(teamRoleEnum.enumValues).toEqual(['admin', 'member', 'viewer']);
-    expect(specStatusEnum.enumValues).toEqual(['draft', 'approved', 'in_progress', 'verifying', 'done', 'failed']);
-    expect(agentRunStatusEnum.enumValues).toEqual(['queued', 'running', 'completed', 'failed', 'cancelled']);
-    expect(taskStatusEnum.enumValues).toEqual(['pending', 'assigned', 'running', 'completed', 'failed', 'skipped']);
-    expect(actorTypeEnum.enumValues).toEqual(['user', 'agent']);
-  });
-});
-
-describe('table exports', () => {
-  it('exports all required tables', () => {
-    expect(users).toBeDefined();
-    expect(teams).toBeDefined();
-    expect(teamMembers).toBeDefined();
-    expect(specs).toBeDefined();
-    expect(specVersions).toBeDefined();
-    expect(agentRuns).toBeDefined();
-    expect(tasks).toBeDefined();
-    expect(artifacts).toBeDefined();
-    expect(auditLog).toBeDefined();
-    expect(apiKeys).toBeDefined();
-  });
-
-  it('tables have expected columns', () => {
-    const cols = (table: Record<string, unknown>) => Object.keys(table);
-
-    expect(cols(users)).toEqual(expect.arrayContaining(['id', 'email', 'name', 'createdAt']));
-    expect(cols(teams)).toEqual(expect.arrayContaining(['id', 'name', 'slug', 'createdAt']));
-    expect(cols(teamMembers)).toEqual(expect.arrayContaining(['userId', 'teamId', 'role']));
-    expect(cols(specs)).toEqual(
-      expect.arrayContaining(['id', 'teamId', 'title', 'content', 'status', 'createdBy', 'createdAt', 'updatedAt']),
-    );
-    expect(cols(specVersions)).toEqual(
-      expect.arrayContaining([
-        'id',
-        'specId',
-        'versionNumber',
-        'content',
-        'actorId',
-        'actorType',
-        'changeSummary',
-        'createdAt',
-      ]),
-    );
-    expect(cols(agentRuns)).toEqual(
-      expect.arrayContaining(['id', 'specId', 'agentRole', 'status', 'environmentId', 'model', 'startedAt', 'completedAt']),
-    );
-    expect(cols(tasks)).toEqual(
-      expect.arrayContaining(['id', 'specId', 'agentRunId', 'title', 'status', 'dependsOn', 'result']),
-    );
-    expect(cols(artifacts)).toEqual(expect.arrayContaining(['id', 'agentRunId', 'type', 'path', 'metadata']));
-    expect(cols(auditLog)).toEqual(
-      expect.arrayContaining(['id', 'teamId', 'agentRunId', 'action', 'details', 'timestamp']),
-    );
-    expect(cols(apiKeys)).toEqual(
-      expect.arrayContaining([
-        'id', 'teamId', 'name', 'keyHash', 'prefix', 'createdBy',
-        'createdAt', 'expiresAt', 'revokedAt', 'lastUsedAt',
-      ]),
-    );
-  });
-});
 
 describe('root module exports', () => {
   it('keeps @kata/db side-effect free', async () => {
-    const previousDatabaseUrl = process.env.DATABASE_URL;
-    delete process.env.DATABASE_URL;
+    const previousConvexDeployment = process.env.CONVEX_DEPLOYMENT;
+    const previousConvexUrl = process.env.CONVEX_URL;
+    delete process.env.CONVEX_DEPLOYMENT;
+    delete process.env.CONVEX_URL;
 
     try {
       const rootModule = await import('../index.js');
-      expect(rootModule.teams).toBeDefined();
-      expect(rootModule.db).toBeUndefined();
+      expect(rootModule.getConvexClientConfig).toBeDefined();
+      expect(rootModule.hasConvexClientConfig).toBeDefined();
     } finally {
-      if (previousDatabaseUrl) {
-        process.env.DATABASE_URL = previousDatabaseUrl;
+      if (previousConvexDeployment) {
+        process.env.CONVEX_DEPLOYMENT = previousConvexDeployment;
       } else {
-        delete process.env.DATABASE_URL;
+        delete process.env.CONVEX_DEPLOYMENT;
+      }
+
+      if (previousConvexUrl) {
+        process.env.CONVEX_URL = previousConvexUrl;
+      } else {
+        delete process.env.CONVEX_URL;
       }
     }
+  });
+});
+
+describe('convex scaffold contract', () => {
+  const currentFile = fileURLToPath(import.meta.url);
+  const packageRoot = path.resolve(path.dirname(currentFile), '../..');
+
+  it('adds the expected convex source files', () => {
+    expect(fs.existsSync(path.join(packageRoot, 'convex/schema.ts'))).toBe(true);
+    expect(fs.existsSync(path.join(packageRoot, 'convex/http.ts'))).toBe(true);
+  });
+
+  it('replaces the postgres client with convex helpers', () => {
+    const clientSource = fs.readFileSync(path.join(packageRoot, 'src/client.ts'), 'utf8');
+
+    expect(clientSource).not.toContain('new pg.Pool');
+    expect(clientSource).not.toContain('drizzle(');
+  });
+
+  it('replaces drizzle schema exports with convex-safe schema exports', () => {
+    const schemaSource = fs.readFileSync(path.join(packageRoot, 'src/schema.ts'), 'utf8');
+
+    expect(schemaSource).not.toContain('drizzle-orm');
+    expect(schemaSource).toContain('convexTables');
   });
 });

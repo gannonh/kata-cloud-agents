@@ -85,7 +85,7 @@ meta:
 intent: |
   Add email/password authentication to the web app.
   Users should be able to register, log in, and reset passwords.
-  Use existing Postgres database. Session-based auth with httpOnly cookies.
+  Use the existing Convex data layer. Session-based auth with httpOnly cookies.
 
 constraints:
   - No third-party auth providers for v1
@@ -235,11 +235,11 @@ Runtime-enforced controls, not prompt-based suggestions.
 
 ### Backend
 - **API server**: Node.js + Hono (lightweight, edge-compatible)
-- **Database**: PostgreSQL (specs, users, teams, audit logs)
+- **Database**: Convex (document tables, realtime subscriptions, server functions)
 - **Queue**: BullMQ on Redis (agent dispatch, event processing)
 - **Real-time**: WebSocket server (log streaming, status updates)
 - **Auth**: Team SSO + API keys
-- **ORM**: Drizzle
+- **Data access**: Convex functions + generated client/types
 
 ### Agent Runtime
 - **LLM integration**: Multi-provider via unified adapter (borrow patterns from pi-mono's `pi-ai`)
@@ -270,7 +270,7 @@ kata-cloud-agents/
 │   ├── infra-adapters/   # Cloud environment provisioning
 │   ├── governance/       # Permissions, audit, cost controls
 │   ├── gateway/          # API server + WebSocket
-│   ├── db/               # Database schema + migrations
+│   ├── db/               # Convex schema, functions, and client helpers
 │   └── shared/           # Types, utils, constants
 ├── agents/
 │   ├── coordinator/      # Coordinator agent prompt + tools
@@ -298,7 +298,7 @@ kata-cloud-agents/
 
 - Initialize Tauri + React monorepo with turborepo
 - Define core TypeScript types (Spec, Agent, Environment, Task, Artifact)
-- PostgreSQL schema + Drizzle migrations (users, teams, specs, agent_runs, audit_log)
+- Convex schema and function scaffolding (users, teams, specs, agent_runs, audit_log)
 - Basic Tauri desktop window with navigation shell
 - API server skeleton (Hono) with health check + auth middleware
 - WebSocket server skeleton for real-time updates
