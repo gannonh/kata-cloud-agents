@@ -18,3 +18,103 @@ Git worktrees are used to manage multiple concurrent branches:
     - `../kata-cloud-agents.worktrees/wt-a`
     - `../kata-cloud-agents.worktrees/wt-b`
     - `../kata-cloud-agents.worktrees/wt-c`
+
+## Frontend Delivery Focus
+
+- Follow the project plan sequencing: desktop-first implementation in M0/M1, web parity later.
+- Treat `apps/desktop` (Tauri) as the primary product surface for current implementation work.
+- Keep `apps/web` as a shell during current milestones; avoid feature expansion there unless explicitly requested for critical maintenance.
+- If scope ambiguity exists, verify milestone/issue intent in Linear before implementing cross-surface UI work.
+
+## Frontend Workflow
+
+- Design and interaction specs in Linear-attached media are the source of truth.
+- Current experiment: use Pencil MCP for rapid UI exploration/prototyping first, then implement in app code after review.
+- Prefer codifying reusable UI in shared packages only when it does not conflict with active milestone sequencing and branch concurrency constraints.
+
+## Private Component Registry (React Source of Truth)
+
+Private shadcn-compatible component registry:
+- Repo: `https://github.com/gannonh/kata-shadcn`
+- Deploy: `https://shadcn-registry-eight.vercel.app`
+
+Rules:
+1. Prefer installing from `@kata-shadcn` before creating new one-off components.
+2. Shared component changes belong in `kata-shadcn` (source repo), not in generated downstream copies.
+3. Pushing to `main` in `kata-shadcn` triggers Vercel deployment; verify install behavior after deploy.
+
+### Auth
+
+Endpoints under `/r/*` require an `x-registry-token` header except these public passthroughs for built-in shadcn dependencies:
+
+- `/r/styles/*` — style definitions
+- `/r/colors/*` — color registry
+- `/r/icons/*` — icon registry
+
+Compatibility endpoints under `/styles/*` proxy to the public shadcn registry for unscoped dependencies (e.g. `utils`, `button`) that the CLI resolves via `styles/{style}/{name}.json`.
+
+When running a local copy of the registry, auth can be disabled when `REGISTRY_TOKEN` is not set (local dev mode). Do not assume this for the deployed Vercel URL.
+
+### Setup
+
+In the consuming project's `components.json`:
+
+```json
+{
+  "registries": {
+    "@kata-shadcn": {
+      "url": "https://shadcn-registry-eight.vercel.app/r/{name}.json",
+      "headers": {
+        "x-registry-token": "${REGISTRY_TOKEN}"
+      }
+    }
+  }
+}
+```
+
+Add `REGISTRY_TOKEN=<token>` to the consuming project's `.env`.
+
+Install a component:
+
+```bash
+npx shadcn add @kata-shadcn/hero1
+```
+
+The install prefix must match the registry key in `components.json` (`<registry-key>/<component-name>`).
+
+For install verification without touching production component paths, use `--path` to a temp folder and verify `git status` afterward:
+
+```bash
+npx shadcn add @kata-shadcn/alert-alert-warning-1 --path ./tmp/registry-install --yes
+```
+
+### Discovery endpoints
+
+Use the compact index for initial filtering (~80-100KB). Fetch the full index only when enriched metadata (tags, complexity, hashes) is needed. All endpoints require `x-registry-token: <token>`.
+
+| Endpoint | Description | Response shape |
+|---|---|---|
+| `GET /r/index-compact.json` | Lightweight discovery (~80-100KB) | `{ total, items: [{ name, category, url }] }` |
+| `GET /r/index.json` | Full enriched index | `{ total, items: [{ name, title, description, category, url, tags, complexity: { files, lines, dependencies }, contentHash, lastModified?, peerComponents }] }` |
+| `GET /r/{name}.json` | Single component (shadcn CLI format) | `{ name, type, title, description, files: [{ path, content, type }], dependencies?, registryDependencies? }` |
+
+`lastModified` is omitted when git history is unavailable.
+
+### Categories
+
+Components are organized into 31 curated categories. Filter `items` client-side on the `category` field. Valid values:
+
+About, Alert & Dialog, Avatar, Blog, Button, Card, Chart, Contact, Content, CTA, Data & Table, Feature, Footer, Forms - Input & Text, Forms - Select & Controls, Gallery, Hero, Navigation, Other, Pricing, Product, Progress & Skeleton, Projects, Services, Settings, Sidebar, Tabs & Accordion, Testimonial, Timeline, Tooltip & Popover, Trust & Logos
+
+### Workflow
+
+1. `GET /r/index-compact.json` — filter by `name` or `category` (e.g. `category === "Hero"`)
+2. Pick an entry, note `name` and `url`
+3. (Optional) `GET /r/{name}.json` — inspect full source and dependencies
+4. Install: `npx shadcn add @kata-shadcn/{name}`
+
+## UI Review and Annotation
+
+- Agentation is installed as the UI annotation workflow tool for design feedback loops.
+- Use Agentation MCP annotations as actionable feedback during frontend QA and acceptance passes.
+- This repo is Tauri + Vite React (not Next.js), so the Next.js-specific Agentation component setup flow is not the primary integration path here.
