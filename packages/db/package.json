@@ -22,13 +22,13 @@
     "lint": "eslint src/",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "db:dev": "convex dev --config ./convex.json",
-    "db:deploy": "convex deploy --config ./convex.json",
-    "db:codegen": "convex codegen --config ./convex.json"
+    "db:dev": "convex dev",
+    "db:deploy": "convex deploy",
+    "db:codegen": "convex codegen"
   },
   "dependencies": {
     "dotenv": "^17.3.1",
-    "convex": "^1.28.4"
+    "convex": "^1.32.0"
   },
   "devDependencies": {
     "@types/node": "^25.3.2",
