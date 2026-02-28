@@ -10,6 +10,11 @@ describe('desktop app navigation', () => {
     expect(screen.getByRole('heading', { name: 'Dashboard' })).toBeInTheDocument();
   });
 
+  test('renders breadcrumb scaffolding for the active route', () => {
+    render(<App />);
+    expect(screen.getByRole('navigation', { name: /breadcrumbs/i })).toBeInTheDocument();
+  });
+
   test.each([
     ['Specs'],
     ['Agents'],

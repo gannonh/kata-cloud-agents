@@ -18,6 +18,11 @@ function renderLayout() {
 }
 
 describe('Layout', () => {
+  test('renders the selected application shell frame', () => {
+    renderLayout();
+    expect(screen.getByTestId('desktop-shell-frame')).toBeInTheDocument();
+  });
+
   test('renders navigation sidebar', () => {
     renderLayout();
     expect(screen.getByRole('navigation')).toBeInTheDocument();

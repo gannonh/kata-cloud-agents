@@ -7,6 +7,14 @@ describe('useAppStore', () => {
     useAppStore.setState({ sidebarCollapsed: false });
   });
 
+  test('exposes an explicit sidebar setter for shell callbacks', () => {
+    const state = useAppStore.getState() as ReturnType<typeof useAppStore.getState> & {
+      setSidebarCollapsed?: (collapsed: boolean) => void;
+    };
+
+    expect(typeof state.setSidebarCollapsed).toBe('function');
+  });
+
   test('initializes with sidebar expanded', () => {
     const state = useAppStore.getState();
     expect(state.sidebarCollapsed).toBe(false);
