@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { FolderGit2, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { Button } from '@kata/ui/components/ui/button';
 
 import { useAppStore } from '../store/app';
@@ -8,7 +8,10 @@ import { getGroupedNavRoutes, navGroupLabels } from '../routes';
 export function Sidebar() {
   const collapsed = useAppStore((s) => s.sidebarCollapsed);
   const toggleSidebar = useAppStore((s) => s.toggleSidebar);
-  const groupedNav = getGroupedNavRoutes();
+  const groupedNav = getGroupedNavRoutes().map((entry) => ({
+    ...entry,
+    routes: entry.routes.filter((route) => route.id !== 'workspaces'),
+  }));
 
   return (
     <nav
@@ -55,6 +58,27 @@ export function Sidebar() {
             ))}
           </section>
         ))}
+        <section>
+          {!collapsed ? (
+            <h2 className="px-4 pb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Workspaces
+            </h2>
+          ) : null}
+          <NavLink
+            to="/workspaces"
+            title={collapsed ? 'Workspaces' : undefined}
+            className={({ isActive }) =>
+              `flex items-center gap-3 ${collapsed ? 'justify-center px-2' : 'px-4'} py-2 text-sm ${
+                isActive
+                  ? 'bg-slate-800 text-white'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+              }`
+            }
+          >
+            <FolderGit2 className="h-4 w-4 shrink-0" />
+            {!collapsed && 'Workspaces'}
+          </NavLink>
+        </section>
       </div>
     </nav>
   );
