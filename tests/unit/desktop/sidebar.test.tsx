@@ -20,6 +20,11 @@ describe('Sidebar', () => {
     useAppStore.setState({ sidebarCollapsed: false });
   });
 
+  test('labels the desktop shell navigation as primary navigation', () => {
+    renderSidebar();
+    expect(screen.getByRole('navigation', { name: /primary/i })).toBeInTheDocument();
+  });
+
   test('renders app name', () => {
     renderSidebar();
     expect(screen.getByText('Kata Cloud Agents')).toBeInTheDocument();
