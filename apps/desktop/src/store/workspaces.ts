@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-import { createMemoryWorkspaceClient } from '../services/workspaces/memory-client';
+import { workspaceClient as defaultWorkspaceClient } from '../services/workspaces';
 import type {
   CreateGitHubWorkspaceInput,
   CreateLocalWorkspaceInput,
@@ -28,13 +28,13 @@ const defaultState = {
   lastError: null as string | null,
 };
 
-let workspaceClient: WorkspaceClient = createMemoryWorkspaceClient();
+let workspaceClient: WorkspaceClient = defaultWorkspaceClient;
 
 function toErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : 'Unexpected error';
 }
 
-export const useWorkspacesStore = create<WorkspacesState>()((set, get) => ({
+export const useWorkspacesStore = create<WorkspacesState>()((set) => ({
   ...defaultState,
 
   load: async () => {

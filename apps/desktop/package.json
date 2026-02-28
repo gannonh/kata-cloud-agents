@@ -13,6 +13,7 @@
     "tauri:build": "tauri build"
   },
   "dependencies": {
+    "@tauri-apps/api": "^2.0.0",
     "@kata/ui": "workspace:*",
     "@kata/realtime-client": "workspace:*",
     "agentation": "^2.2.1",
