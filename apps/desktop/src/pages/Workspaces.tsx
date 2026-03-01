@@ -9,8 +9,8 @@ import type { GitHubRepoOption } from '../services/workspaces/types';
 type WorkspaceAction = 'clone' | 'create' | null;
 
 export function deriveNameFromRepoPath(repoPath: string): string {
-  const sanitized = repoPath.trim().replace(/\/+$/, '');
-  const segment = sanitized.split('/').pop() ?? '';
+  const sanitized = repoPath.trim().replace(/[\\/]+$/, '');
+  const segment = sanitized.split(/[\\/]/).filter(Boolean).at(-1) ?? '';
   return segment.trim() || 'Workspace';
 }
 
@@ -264,18 +264,22 @@ export function Workspaces() {
       setFormError('Only github.com repositories are supported.');
       return;
     }
-    await createGitHub({
-      repoUrl: githubRepoUrl.trim(),
-      workspaceName: deriveUniqueWorkspaceName(
-        deriveNameFromRepoUrl(githubRepoUrl.trim()),
-        workspaces,
-      ),
-      cloneRootPath: cloneLocation.trim(),
-    });
+    try {
+      await createGitHub({
+        repoUrl: githubRepoUrl.trim(),
+        workspaceName: deriveUniqueWorkspaceName(
+          deriveNameFromRepoUrl(githubRepoUrl.trim()),
+          workspaces,
+        ),
+        cloneRootPath: cloneLocation.trim(),
+      });
 
-    setCreatedRepoUrl(null);
-    setGithubRepoUrl('');
-    setAction(null);
+      setCreatedRepoUrl(null);
+      setGithubRepoUrl('');
+      setAction(null);
+    } catch (error) {
+      setFormError(toErrorMessage(error));
+    }
   }
 
   async function onSubmitCreateNew(event: FormEvent<HTMLFormElement>) {
@@ -286,21 +290,25 @@ export function Workspaces() {
       setFormError('Repository name is required.');
       return;
     }
-    const workspace = await createNewGitHub({
-      repositoryName: newRepositoryName.trim(),
-      workspaceName: deriveUniqueWorkspaceName(
-        deriveNameFromRepositoryInput(newRepositoryName),
-        workspaces,
-      ),
-      cloneRootPath: cloneLocation.trim(),
-    });
-    if (!workspace) {
-      return;
-    }
+    try {
+      const workspace = await createNewGitHub({
+        repositoryName: newRepositoryName.trim(),
+        workspaceName: deriveUniqueWorkspaceName(
+          deriveNameFromRepositoryInput(newRepositoryName),
+          workspaces,
+        ),
+        cloneRootPath: cloneLocation.trim(),
+      });
+      if (!workspace) {
+        return;
+      }
 
-    setCreatedRepoUrl(workspace.sourceType === 'github' ? workspace.source : null);
-    setNewRepositoryName('');
-    setAction(null);
+      setCreatedRepoUrl(workspace.sourceType === 'github' ? workspace.source : null);
+      setNewRepositoryName('');
+      setAction(null);
+    } catch (error) {
+      setFormError(toErrorMessage(error));
+    }
   }
 
   return (

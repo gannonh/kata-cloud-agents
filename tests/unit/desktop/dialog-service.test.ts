@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
 import { pickDirectory } from '../../../apps/desktop/src/services/system/dialog';
 
@@ -10,10 +10,13 @@ declare global {
 }
 
 describe('dialog service', () => {
-  beforeEach(() => {
+  const resetTauriGlobals = () => {
     delete globalThis.__TAURI__;
     delete globalThis.__TAURI_INTERNALS__;
-  });
+  };
+
+  beforeEach(resetTauriGlobals);
+  afterEach(resetTauriGlobals);
 
   test('returns null when tauri runtime is unavailable', async () => {
     await expect(pickDirectory('/tmp/repos')).resolves.toBeNull();

@@ -10,6 +10,7 @@ import { pickDirectory } from '../../../apps/desktop/src/services/system/dialog'
 import {
   resetWorkspacesStore,
   setWorkspaceClient,
+  useWorkspacesStore,
 } from '../../../apps/desktop/src/store/workspaces';
 import type {
   GitHubRepoOption,
@@ -348,6 +349,52 @@ describe('Workspaces page', () => {
     await user.click(screen.getByRole('button', { name: /create new/i }));
     await user.click(screen.getByRole('button', { name: /^browse$/i }));
     expect(screen.getByLabelText(/repo location/i)).toHaveValue('/tmp/create-picked');
+  });
+
+  test('catches unexpected errors from clone store action', async () => {
+    const user = userEvent.setup();
+    render(<Workspaces />);
+
+    useWorkspacesStore.setState({
+      createGitHub: async () => {
+        throw new Error('unexpected clone error');
+      },
+    });
+
+    await user.click(screen.getByRole('button', { name: /clone remote/i }));
+    await user.type(
+      screen.getByLabelText(/github repository url/i),
+      'https://github.com/org/repo',
+    );
+    await user.clear(screen.getByLabelText(/repo location/i));
+    await user.type(screen.getByLabelText(/repo location/i), '/tmp/repos');
+    const cloneUrlInput = screen.getByLabelText(/github repository url/i);
+    const cloneForm = cloneUrlInput.closest('form');
+    if (!cloneForm) {
+      throw new Error('clone form not found');
+    }
+    await user.click(within(cloneForm).getByRole('button', { name: /add cloned repo/i }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('unexpected clone error');
+  });
+
+  test('catches unexpected errors from create-new store action', async () => {
+    const user = userEvent.setup();
+    render(<Workspaces />);
+
+    useWorkspacesStore.setState({
+      createNewGitHub: async () => {
+        throw new Error('unexpected create error');
+      },
+    });
+
+    await user.click(screen.getByRole('button', { name: /create new/i }));
+    await user.type(screen.getByLabelText(/repository name/i), 'kat-154-created');
+    await user.clear(screen.getByLabelText(/repo location/i));
+    await user.type(screen.getByLabelText(/repo location/i), '/tmp/repos');
+    await user.click(screen.getByRole('button', { name: /create new repo/i }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('unexpected create error');
   });
 
   test('uses the default clone location when empty', async () => {

@@ -84,7 +84,7 @@ function upsertWorkspace(
   };
 
   state.workspaces.push(workspace);
-  return workspace;
+  return { ...workspace };
 }
 
 export function createMemoryWorkspaceClient(
@@ -96,7 +96,7 @@ export function createMemoryWorkspaceClient(
   };
 
   return {
-    list: async () => [...state.workspaces],
+    list: async () => state.workspaces.map((workspace) => ({ ...workspace })),
     listGitHubRepos: async (query?: string) => {
       const candidates = new Map<string, GitHubRepoOption>();
       for (const workspace of state.workspaces) {
@@ -162,11 +162,16 @@ export function createMemoryWorkspaceClient(
       }
 
       const slug = toWorkspaceSlug(input.workspaceName);
+      const parsedUrl = new URL(input.repoUrl);
+      const repoPath = parsedUrl.pathname.replace(/^\/+/, '').replace(/\.git$/i, '');
+      const ownerRepo = repoPath.replace('/', '__');
+      const root = input.cloneRootPath?.trim() || '/tmp/repo-cache';
+      const cachePath = `${root}/${ownerRepo}`;
       const workspace = upsertWorkspace(state, {
         sourceType: 'github',
         source: input.repoUrl,
-        repoRootPath: `/tmp/repo-cache/${slug}`,
-        worktreePath: `/tmp/repo-cache/${slug}.worktrees/${slug}`,
+        repoRootPath: cachePath,
+        worktreePath: `${cachePath}.worktrees/${slug}`,
         workspaceName: input.workspaceName,
         branchName: input.branchName,
         baseRef: input.baseRef,

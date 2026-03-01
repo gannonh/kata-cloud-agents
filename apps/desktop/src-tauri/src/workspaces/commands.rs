@@ -342,7 +342,19 @@ pub fn workspace_delete(
     if remove_files {
         let path = Path::new(&removed.worktree_path);
         if path.exists() {
-            fs::remove_dir_all(path).map_err(|err| err.to_string())?;
+            // Remove via git first to clean up .git/worktrees metadata, then
+            // fall back to filesystem removal if git worktree remove fails
+            // (e.g. the directory is not a linked worktree).
+            let git_removed = Command::new("git")
+                .args(["worktree", "remove", "--force"])
+                .arg(path)
+                .output()
+                .map(|output| output.status.success())
+                .unwrap_or(false);
+
+            if !git_removed {
+                fs::remove_dir_all(path).map_err(|err| err.to_string())?;
+            }
         }
     }
 

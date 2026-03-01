@@ -25,7 +25,7 @@ pub fn create_github_workspace(
     let (owner, repo) = parse_github_repo_url(repo_url)?;
     let cache_repo_path = clone_root_path
         .filter(|value| !value.trim().is_empty())
-        .map(|value| Path::new(&value).join(&repo))
+        .map(|value| Path::new(&value).join(format!("{owner}__{repo}")))
         .unwrap_or_else(|| {
             app_data_dir
                 .join("repo-cache")
