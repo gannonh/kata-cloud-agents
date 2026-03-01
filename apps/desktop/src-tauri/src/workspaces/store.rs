@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
-use super::model::{now_iso8601, Workspace, WorkspaceStatus};
+use super::model::{now_iso8601, KnownRepoOption, Workspace, WorkspaceSourceType, WorkspaceStatus};
 use super::WorkspaceError;
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -106,6 +106,63 @@ impl WorkspaceStore {
         self.app_data_dir
             .join("workspaces")
             .join("workspaces.json")
+    }
+
+    pub fn list_known_repos(&self, query: Option<&str>) -> Vec<KnownRepoOption> {
+        let mut dedup = std::collections::HashMap::<String, KnownRepoOption>::new();
+        for workspace in &self.registry.workspaces {
+            if workspace.source_type != WorkspaceSourceType::Github {
+                continue;
+            }
+            let Some(repo_id) = repo_id_from_source(&workspace.source) else {
+                continue;
+            };
+            let candidate = KnownRepoOption {
+                id: repo_id.clone(),
+                name_with_owner: repo_id.clone(),
+                url: format!("https://github.com/{repo_id}"),
+                updated_at: workspace.updated_at.clone(),
+            };
+            match dedup.get(&repo_id) {
+                Some(existing) if existing.updated_at >= candidate.updated_at => {}
+                _ => {
+                    dedup.insert(repo_id, candidate);
+                }
+            }
+        }
+
+        let normalized_query = query.unwrap_or_default().trim().to_lowercase();
+        let mut repos = dedup
+            .into_values()
+            .filter(|repo| {
+                if normalized_query.is_empty() {
+                    return true;
+                }
+                let haystack = format!("{} {}", repo.name_with_owner, repo.url).to_lowercase();
+                haystack.contains(&normalized_query)
+            })
+            .collect::<Vec<_>>();
+        repos.sort_by(|left, right| right.updated_at.cmp(&left.updated_at));
+        repos.truncate(20);
+        repos
+    }
+}
+
+fn repo_id_from_source(source: &str) -> Option<String> {
+    let parsed = url::Url::parse(source).ok()?;
+    if parsed.host_str() != Some("github.com") {
+        return None;
+    }
+    let id = parsed
+        .path()
+        .trim_start_matches('/')
+        .trim_end_matches(".git")
+        .trim()
+        .to_string();
+    if id.is_empty() {
+        None
+    } else {
+        Some(id)
     }
 }
 
