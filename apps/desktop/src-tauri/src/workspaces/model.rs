@@ -53,6 +53,16 @@ pub struct CreateGitHubWorkspaceInput {
     pub base_ref: Option<String>,
 }
 
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CreateNewGitHubWorkspaceInput {
+    pub repository_name: String,
+    pub workspace_name: String,
+    pub clone_root_path: Option<String>,
+    pub branch_name: Option<String>,
+    pub base_ref: Option<String>,
+}
+
 #[derive(Debug, Clone)]
 pub struct PreparedWorkspace {
     pub repo_root_path: String,

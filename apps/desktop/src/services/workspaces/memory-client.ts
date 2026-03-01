@@ -6,6 +6,7 @@ import {
 import type {
   CreateGitHubWorkspaceInput,
   CreateLocalWorkspaceInput,
+  CreateNewGitHubWorkspaceInput,
   GitHubRepoOption,
   WorkspaceClient,
 } from './types';
@@ -24,6 +25,36 @@ function generateWorkspaceId(): string {
 function toWorkspaceSlug(name: string): string {
   const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
   return slug || 'workspace';
+}
+
+function parseRepositoryInput(repositoryName: string): {
+  owner: string;
+  repo: string;
+  url: string;
+} {
+  const normalized = repositoryName.trim().replace(/\.git$/i, '');
+  if (!normalized) {
+    throw new Error('Repository name is required');
+  }
+
+  const segments = normalized
+    .split('/')
+    .map((segment) => segment.trim())
+    .filter(Boolean);
+  if (segments.length === 0 || segments.length > 2) {
+    throw new Error('Repository name must be "<name>" or "<owner>/<name>"');
+  }
+
+  const [owner, repo] = segments.length === 2 ? segments : ['me', segments[0]];
+  if (!repo) {
+    throw new Error('Repository name is required');
+  }
+
+  return {
+    owner,
+    repo,
+    url: `https://github.com/${owner}/${repo}`,
+  };
 }
 
 function upsertWorkspace(
@@ -139,6 +170,22 @@ export function createMemoryWorkspaceClient(
         source: input.repoUrl,
         repoRootPath: `/tmp/repo-cache/${slug}`,
         worktreePath: `/tmp/repo-cache/${slug}.worktrees/${slug}`,
+        workspaceName: input.workspaceName,
+        branchName: input.branchName,
+        baseRef: input.baseRef,
+      });
+      state.activeWorkspaceId = workspace.id;
+      return workspace;
+    },
+    createNewGitHub: async (input: CreateNewGitHubWorkspaceInput) => {
+      const parsed = parseRepositoryInput(input.repositoryName);
+      const slug = toWorkspaceSlug(parsed.repo);
+      const root = input.cloneRootPath?.trim() || '/tmp/repos';
+      const workspace = upsertWorkspace(state, {
+        sourceType: 'github',
+        source: parsed.url,
+        repoRootPath: `${root}/${parsed.repo}`,
+        worktreePath: `${root}/${parsed.repo}.worktrees/${slug}`,
         workspaceName: input.workspaceName,
         branchName: input.branchName,
         baseRef: input.baseRef,

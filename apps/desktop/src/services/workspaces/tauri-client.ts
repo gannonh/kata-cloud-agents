@@ -5,6 +5,7 @@ import { WorkspaceSchema } from '../../types/workspace';
 import type {
   CreateGitHubWorkspaceInput,
   CreateLocalWorkspaceInput,
+  CreateNewGitHubWorkspaceInput,
   GitHubRepoOption,
   WorkspaceClient,
 } from './types';
@@ -35,6 +36,8 @@ export function createTauriWorkspaceClient(
       WorkspaceSchema.parse(await invokeFn('workspace_create_local', { input })),
     createGitHub: async (input: CreateGitHubWorkspaceInput) =>
       WorkspaceSchema.parse(await invokeFn('workspace_create_github', { input })),
+    createNewGitHub: async (input: CreateNewGitHubWorkspaceInput) =>
+      WorkspaceSchema.parse(await invokeFn('workspace_create_new_github', { input })),
     setActive: async (id: string) => {
       await invokeFn('workspace_set_active', { id });
     },

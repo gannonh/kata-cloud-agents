@@ -50,6 +50,7 @@ describe('tauri workspace client', () => {
       .fn()
       .mockResolvedValueOnce(sampleWorkspace())
       .mockResolvedValueOnce(sampleWorkspace())
+      .mockResolvedValueOnce(sampleWorkspace())
       .mockResolvedValueOnce(undefined)
       .mockResolvedValueOnce('ws_1')
       .mockResolvedValueOnce(undefined)
@@ -64,6 +65,11 @@ describe('tauri workspace client', () => {
       repoUrl: 'https://github.com/org/repo',
       workspaceName: 'KAT-154 GH',
     });
+    const created = await client.createNewGitHub({
+      repositoryName: 'kat-154-created',
+      workspaceName: 'KAT-154 Created',
+      cloneRootPath: '/tmp/repos',
+    });
     await client.setActive('ws_1');
     const activeId = await client.getActiveId();
     await client.archive('ws_1');
@@ -71,6 +77,7 @@ describe('tauri workspace client', () => {
 
     expect(local.id).toBe('ws_1');
     expect(remote.id).toBe('ws_1');
+    expect(created.id).toBe('ws_1');
     expect(activeId).toBe('ws_1');
     expect(mockInvoke).toHaveBeenNthCalledWith(1, 'workspace_create_local', {
       input: { repoPath: '/tmp/repo', workspaceName: 'KAT-154' },
@@ -78,10 +85,17 @@ describe('tauri workspace client', () => {
     expect(mockInvoke).toHaveBeenNthCalledWith(2, 'workspace_create_github', {
       input: { repoUrl: 'https://github.com/org/repo', workspaceName: 'KAT-154 GH' },
     });
-    expect(mockInvoke).toHaveBeenNthCalledWith(3, 'workspace_set_active', { id: 'ws_1' });
-    expect(mockInvoke).toHaveBeenNthCalledWith(4, 'workspace_get_active_id');
-    expect(mockInvoke).toHaveBeenNthCalledWith(5, 'workspace_archive', { id: 'ws_1' });
-    expect(mockInvoke).toHaveBeenNthCalledWith(6, 'workspace_delete', {
+    expect(mockInvoke).toHaveBeenNthCalledWith(3, 'workspace_create_new_github', {
+      input: {
+        repositoryName: 'kat-154-created',
+        workspaceName: 'KAT-154 Created',
+        cloneRootPath: '/tmp/repos',
+      },
+    });
+    expect(mockInvoke).toHaveBeenNthCalledWith(4, 'workspace_set_active', { id: 'ws_1' });
+    expect(mockInvoke).toHaveBeenNthCalledWith(5, 'workspace_get_active_id');
+    expect(mockInvoke).toHaveBeenNthCalledWith(6, 'workspace_archive', { id: 'ws_1' });
+    expect(mockInvoke).toHaveBeenNthCalledWith(7, 'workspace_delete', {
       id: 'ws_1',
       removeFiles: true,
     });

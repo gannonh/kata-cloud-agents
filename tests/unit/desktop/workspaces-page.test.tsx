@@ -1,3 +1,4 @@
+// biome-ignore lint/correctness/noUnusedImports: Required for JSX runtime in this test file.
 import React from 'react';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -86,14 +87,21 @@ describe('Workspaces page', () => {
     ).toBeInTheDocument();
   });
 
-  test('shows create new flow message for this first step', async () => {
+  test('supports create new repository action', async () => {
     const user = userEvent.setup();
     render(<Workspaces />);
 
     await user.click(screen.getByRole('button', { name: /create new/i }));
-    expect(
-      await screen.findByText(/create new repository flow is next/i),
-    ).toBeInTheDocument();
+    await user.type(screen.getByLabelText(/repository name/i), 'kat-154-created');
+    await user.clear(screen.getByLabelText(/repo location/i));
+    await user.type(screen.getByLabelText(/repo location/i), '/tmp/repos');
+    await user.click(screen.getByRole('button', { name: /create new repo/i }));
+
+    expect(await screen.findByText(/^kat-154-created$/i)).toBeInTheDocument();
+    expect(await screen.findByRole('link', { name: /view repository/i })).toHaveAttribute(
+      'href',
+      'https://github.com/me/kat-154-created',
+    );
   });
 
   test('supports archive and remove on existing list', async () => {

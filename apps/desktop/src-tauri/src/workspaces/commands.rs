@@ -6,10 +6,11 @@ use serde::Serialize;
 use tauri::State;
 use uuid::Uuid;
 
-use super::git_github::create_github_workspace;
+use super::git_github::{create_github_workspace, create_new_github_workspace};
 use super::git_local::create_local_workspace;
 use super::model::{
-    now_iso8601, CreateGitHubWorkspaceInput, CreateLocalWorkspaceInput, Workspace,
+    now_iso8601, CreateGitHubWorkspaceInput, CreateLocalWorkspaceInput,
+    CreateNewGitHubWorkspaceInput, Workspace,
     WorkspaceSourceType, WorkspaceStatus,
 };
 use super::{WorkspaceError, WorkspaceState};
@@ -248,6 +249,49 @@ pub fn workspace_create_github(
         worktree_path: prepared.worktree_path,
         branch: prepared.branch,
         base_ref: Some(prepared.base_ref),
+        status: WorkspaceStatus::Ready,
+        created_at: timestamp.clone(),
+        updated_at: timestamp,
+        last_opened_at: None,
+    };
+
+    let mut store = state.store.lock().map_err(|err| err.to_string())?;
+    store.insert(workspace.clone());
+    store
+        .set_active(&workspace.id)
+        .map_err(to_command_error)?;
+    store.save().map_err(to_command_error)?;
+
+    Ok(workspace)
+}
+
+#[tauri::command]
+pub fn workspace_create_new_github(
+    input: CreateNewGitHubWorkspaceInput,
+    state: State<'_, WorkspaceState>,
+) -> Result<Workspace, String> {
+    let workspace_id = next_workspace_id();
+    let suffix = workspace_suffix(&workspace_id);
+    let created = create_new_github_workspace(
+        &input.repository_name,
+        &input.workspace_name,
+        input.clone_root_path.clone(),
+        input.branch_name.clone(),
+        input.base_ref.clone(),
+        suffix,
+        &state.app_data_dir,
+    )
+    .map_err(to_command_error)?;
+    let timestamp = now_iso8601();
+    let workspace = Workspace {
+        id: workspace_id.clone(),
+        name: input.workspace_name,
+        source_type: WorkspaceSourceType::Github,
+        source: created.repo_url,
+        repo_root_path: created.prepared.repo_root_path,
+        worktree_path: created.prepared.worktree_path,
+        branch: created.prepared.branch,
+        base_ref: Some(created.prepared.base_ref),
         status: WorkspaceStatus::Ready,
         created_at: timestamp.clone(),
         updated_at: timestamp,

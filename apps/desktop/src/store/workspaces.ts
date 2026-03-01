@@ -4,6 +4,7 @@ import { workspaceClient as defaultWorkspaceClient } from '../services/workspace
 import type {
   CreateGitHubWorkspaceInput,
   CreateLocalWorkspaceInput,
+  CreateNewGitHubWorkspaceInput,
   WorkspaceClient,
 } from '../services/workspaces/types';
 import type { Workspace } from '../types/workspace';
@@ -16,6 +17,7 @@ interface WorkspacesState {
   load: () => Promise<void>;
   createLocal: (input: CreateLocalWorkspaceInput) => Promise<void>;
   createGitHub: (input: CreateGitHubWorkspaceInput) => Promise<void>;
+  createNewGitHub: (input: CreateNewGitHubWorkspaceInput) => Promise<Workspace | null>;
   setActive: (id: string) => Promise<void>;
   archive: (id: string) => Promise<void>;
   remove: (id: string, removeFiles: boolean) => Promise<void>;
@@ -100,6 +102,23 @@ export const useWorkspacesStore = create<WorkspacesState>()((set) => ({
       }));
     } catch (error) {
       set({ lastError: toErrorMessage(error) });
+    } finally {
+      set({ isCreating: false });
+    }
+  },
+
+  createNewGitHub: async (input) => {
+    set({ isCreating: true, lastError: null });
+    try {
+      const workspace = await workspaceClient.createNewGitHub(input);
+      set((state) => ({
+        workspaces: [...state.workspaces, workspace],
+        activeWorkspaceId: workspace.id,
+      }));
+      return workspace;
+    } catch (error) {
+      set({ lastError: toErrorMessage(error) });
+      return null;
     } finally {
       set({ isCreating: false });
     }

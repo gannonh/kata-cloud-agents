@@ -31,6 +31,19 @@ describe('workspace memory client', () => {
     expect(ws.baseRef).toBe('origin/main');
   });
 
+  test('creates new github repo workspace from repository name', async () => {
+    const client = createMemoryWorkspaceClient();
+    const ws = await client.createNewGitHub({
+      repositoryName: 'kat-154-created',
+      workspaceName: 'KAT-154 Created',
+      cloneRootPath: '/tmp/repos',
+    });
+
+    expect(ws.sourceType).toBe('github');
+    expect(ws.source).toBe('https://github.com/me/kat-154-created');
+    expect(ws.repoRootPath).toBe('/tmp/repos/kat-154-created');
+  });
+
   test('supports seeded state defaults', async () => {
     const client = createMemoryWorkspaceClient({
       activeWorkspaceId: 'ws_seed',

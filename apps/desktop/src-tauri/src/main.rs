@@ -19,6 +19,7 @@ fn main() {
             workspaces::commands::workspace_set_active,
             workspaces::commands::workspace_create_local,
             workspaces::commands::workspace_create_github,
+            workspaces::commands::workspace_create_new_github,
             workspaces::commands::workspace_list_github_repos,
             workspaces::commands::workspace_pick_directory,
             workspaces::commands::workspace_archive,

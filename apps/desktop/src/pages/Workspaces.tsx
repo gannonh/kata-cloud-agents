@@ -8,7 +8,7 @@ import { getWorkspaceClient, useWorkspacesStore } from '../store/workspaces';
 import type { Workspace } from '../types/workspace';
 import type { GitHubRepoOption } from '../services/workspaces/types';
 
-type WorkspaceAction = 'clone' | null;
+type WorkspaceAction = 'clone' | 'create' | null;
 
 function deriveNameFromRepoPath(repoPath: string): string {
   const sanitized = repoPath.trim().replace(/\/+$/, '');
@@ -25,6 +25,18 @@ function deriveNameFromRepoUrl(repoUrl: string): string {
   } catch {
     return 'Workspace';
   }
+}
+
+function deriveNameFromRepositoryInput(repositoryName: string): string {
+  const normalized = repositoryName.trim().replace(/\.git$/i, '');
+  if (!normalized) {
+    return 'Workspace';
+  }
+  const parts = normalized
+    .split('/')
+    .map((part) => part.trim())
+    .filter(Boolean);
+  return parts.at(-1) || 'Workspace';
 }
 
 function buildDefaultCloneLocation(home: string): string {
@@ -117,6 +129,7 @@ export function Workspaces() {
   const load = useWorkspacesStore((state) => state.load);
   const createLocal = useWorkspacesStore((state) => state.createLocal);
   const createGitHub = useWorkspacesStore((state) => state.createGitHub);
+  const createNewGitHub = useWorkspacesStore((state) => state.createNewGitHub);
   const archive = useWorkspacesStore((state) => state.archive);
   const remove = useWorkspacesStore((state) => state.remove);
 
@@ -130,9 +143,11 @@ export function Workspaces() {
   const [hasLoadedGithubRepos, setHasLoadedGithubRepos] = useState(false);
   const [githubRepoSearchError, setGithubRepoSearchError] = useState<string | null>(null);
   const [cloneLocation, setCloneLocation] = useState('');
+  const [newRepositoryName, setNewRepositoryName] = useState('');
   const [isPickingLocalRepo, setIsPickingLocalRepo] = useState(false);
   const [isPickingCloneLocation, setIsPickingCloneLocation] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [createdRepoUrl, setCreatedRepoUrl] = useState<string | null>(null);
 
   useEffect(() => {
     void load();
@@ -227,6 +242,7 @@ export function Workspaces() {
           workspaces,
         ),
       });
+      setCreatedRepoUrl(null);
       setAction(null);
     } catch (error) {
       setFormError(toErrorMessage(error));
@@ -277,14 +293,39 @@ export function Workspaces() {
       cloneRootPath: cloneLocation.trim(),
     });
 
+    setCreatedRepoUrl(null);
     setGithubRepoUrl('');
     setAction(null);
   }
 
-  function onCreateNewClick() {
-    setFormError(
-      'Create New repository flow is next. For now use Local Repo or Clone Remote.',
-    );
+  async function onSubmitCreateNew(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setFormError(null);
+
+    if (!newRepositoryName.trim()) {
+      setFormError('Repository name is required.');
+      return;
+    }
+    if (!cloneLocation.trim()) {
+      setFormError('Repo location is required.');
+      return;
+    }
+
+    const workspace = await createNewGitHub({
+      repositoryName: newRepositoryName.trim(),
+      workspaceName: deriveUniqueWorkspaceName(
+        deriveNameFromRepositoryInput(newRepositoryName),
+        workspaces,
+      ),
+      cloneRootPath: cloneLocation.trim(),
+    });
+    if (!workspace) {
+      return;
+    }
+
+    setCreatedRepoUrl(workspace.sourceType === 'github' ? workspace.source : null);
+    setNewRepositoryName('');
+    setAction(null);
   }
 
   return (
@@ -311,6 +352,7 @@ export function Workspaces() {
               setAction('clone');
               setFormError(null);
               setGithubRepoSearchError(null);
+              setCreatedRepoUrl(null);
             }}
             className="rounded bg-slate-200 px-4 py-2 text-sm font-medium text-slate-900"
           >
@@ -318,7 +360,11 @@ export function Workspaces() {
           </button>
           <button
             type="button"
-            onClick={onCreateNewClick}
+            onClick={() => {
+              setAction('create');
+              setFormError(null);
+              setGithubRepoSearchError(null);
+            }}
             className="rounded bg-slate-200 px-4 py-2 text-sm font-medium text-slate-900"
           >
             Create New
@@ -400,11 +446,66 @@ export function Workspaces() {
           </form>
         ) : null}
 
+        {action === 'create' ? (
+          <form onSubmit={onSubmitCreateNew} className="mt-4 space-y-4">
+            <label className="block text-sm text-slate-200">
+              Repository name
+              <input
+                value={newRepositoryName}
+                onChange={(event) => setNewRepositoryName(event.target.value)}
+                className="mt-1 block w-full rounded border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100"
+                placeholder="kat-154-created or owner/kat-154-created"
+              />
+            </label>
+
+            <label className="block text-sm text-slate-200">
+              Repo location
+              <div className="mt-1 flex items-center gap-2">
+                <input
+                  value={cloneLocation}
+                  onChange={(event) => setCloneLocation(event.target.value)}
+                  className="block w-full rounded border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100"
+                  placeholder="/Users/me/kata/repos"
+                />
+                <button
+                  type="button"
+                  onClick={() => void onPickCloneLocation()}
+                  disabled={isPickingCloneLocation}
+                  className="rounded border border-slate-700 px-3 py-2 text-sm text-slate-200"
+                >
+                  {isPickingCloneLocation ? 'Opening...' : 'Browse'}
+                </button>
+              </div>
+            </label>
+
+            <button
+              type="submit"
+              disabled={isCreating}
+              className="rounded bg-slate-200 px-4 py-2 text-sm font-medium text-slate-900 disabled:opacity-50"
+            >
+              {isCreating ? 'Creating...' : 'Create New Repo'}
+            </button>
+          </form>
+        ) : null}
+
         {(formError || lastError) && (
           <p role="alert" className="mt-3 text-sm text-rose-400">
             {formError ?? lastError}
           </p>
         )}
+        {createdRepoUrl ? (
+          <p className="mt-3 text-sm text-emerald-300">
+            Repository created.{' '}
+            <a
+              href={createdRepoUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="underline hover:text-emerald-200"
+            >
+              View repository
+            </a>
+          </p>
+        ) : null}
       </div>
 
       <section className="mt-6">
