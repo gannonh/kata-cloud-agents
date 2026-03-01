@@ -409,13 +409,32 @@ describe('Workspaces page', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('unexpected create error');
   });
 
-  test('uses the default clone location when empty', async () => {
+  test('uses a default clone location derived from home directory', async () => {
     const user = userEvent.setup();
     render(<Workspaces />);
 
     await user.click(screen.getByRole('button', { name: /clone remote/i }));
     await waitFor(() => {
-      expect(screen.getByLabelText(/repo location/i)).toHaveValue('/Users/me/kata/repos');
+      const value = screen.getByLabelText(/repo location/i).getAttribute('value') ?? '';
+      expect(value).toMatch(/\/kata\/repos$/);
+      expect(value.length).toBeGreaterThan('/kata/repos'.length);
     });
+  });
+
+  test('clears form error when switching actions', async () => {
+    const user = userEvent.setup();
+    render(<Workspaces />);
+
+    await user.click(screen.getByRole('button', { name: /clone remote/i }));
+    const cloneUrlInput = screen.getByLabelText(/github repository url/i);
+    const cloneForm = cloneUrlInput.closest('form');
+    if (!cloneForm) {
+      throw new Error('clone form not found');
+    }
+    fireEvent.submit(cloneForm);
+    expect(await screen.findByRole('alert')).toHaveTextContent('GitHub repository URL is required.');
+
+    await user.click(screen.getByRole('button', { name: /create new/i }));
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 });

@@ -47,4 +47,21 @@ describe('workspace service index', () => {
     expect(memoryFactory).toHaveBeenCalled();
     expect(tauriFactory).toHaveBeenCalled();
   });
+
+  test('warns when falling back to memory client outside vitest', async () => {
+    const original = import.meta.env.VITEST;
+    delete (import.meta.env as Record<string, unknown>).VITEST;
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    try {
+      const module = await import('../../../apps/desktop/src/services/workspaces/index');
+      module.createWorkspaceClient(false);
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Tauri runtime not detected'),
+      );
+    } finally {
+      (import.meta.env as Record<string, unknown>).VITEST = original;
+      warnSpy.mockRestore();
+    }
+  });
 });

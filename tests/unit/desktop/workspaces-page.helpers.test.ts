@@ -9,8 +9,8 @@ import {
   normalizeSearchTokens,
   rankRepos,
   repoMatchScore,
-  toErrorMessage,
 } from '../../../apps/desktop/src/pages/Workspaces';
+import { toErrorMessage } from '../../../apps/desktop/src/store/workspaces';
 import type { Workspace } from '../../../apps/desktop/src/types/workspace';
 import type { GitHubRepoOption } from '../../../apps/desktop/src/services/workspaces/types';
 
@@ -75,6 +75,7 @@ describe('workspaces helper functions', () => {
     expect(repoMatchScore(repo, 'kata')).toBeGreaterThan(0);
     expect(repoMatchScore(repo, 'kata-sh')).toBeGreaterThan(0);
     expect(repoMatchScore(repo, 'https://github.com/kata-sh/kat-154')).toBeGreaterThan(100);
+    expect(repoMatchScore(repo, 'https://')).toBeGreaterThan(0);
   });
 
   test('ranks repos by score and freshness when ties occur', () => {
@@ -118,12 +119,14 @@ describe('workspaces helper functions', () => {
     expect(uneven[0]?.nameWithOwner).toBe('alpha/repo');
   });
 
-  test('extracts user-friendly error messages', () => {
+  test('extracts user-friendly error messages from various shapes', () => {
     expect(toErrorMessage(new Error('boom'))).toBe('boom');
     expect(toErrorMessage('failure')).toBe('failure');
-    expect(toErrorMessage({ message: 'msg' })).toBe('Unexpected error');
-    expect(toErrorMessage({ error: 'nested-string' })).toBe('Unexpected error');
-    expect(toErrorMessage({ error: { message: 'nested-object' } })).toBe('Unexpected error');
+    expect(toErrorMessage({ message: 'msg' })).toBe('msg');
+    expect(toErrorMessage({ error: 'nested-string' })).toBe('nested-string');
+    expect(toErrorMessage({ error: { message: 'nested-object' } })).toBe('nested-object');
     expect(toErrorMessage(null)).toBe('Unexpected error');
+    expect(toErrorMessage({})).toBe('Unexpected error');
+    expect(toErrorMessage('')).toBe('Unexpected error');
   });
 });

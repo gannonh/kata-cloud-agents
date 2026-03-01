@@ -9,7 +9,7 @@ export const WorkspaceStatusSchema = z.enum([
 export const WorkspaceSourceTypeSchema = z.enum(['local', 'github']);
 
 export const WorkspaceSchema = z.object({
-  id: z.string(),
+  id: z.string().min(1),
   name: z.string().min(1),
   sourceType: WorkspaceSourceTypeSchema,
   source: z.string().min(1),

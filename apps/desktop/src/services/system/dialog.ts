@@ -4,7 +4,7 @@ import { hasTauriRuntime } from '../workspaces';
 
 export async function pickDirectory(defaultPath?: string): Promise<string | null> {
   if (!hasTauriRuntime()) {
-    return null;
+    throw new Error('File picker requires the desktop application runtime.');
   }
 
   return invoke<string | null>('workspace_pick_directory', {

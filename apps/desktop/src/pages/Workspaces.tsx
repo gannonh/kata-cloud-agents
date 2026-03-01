@@ -2,8 +2,7 @@ import { type FormEvent, useEffect, useState } from 'react';
 
 import { pickDirectory } from '../services/system/dialog';
 import { isGitHubRepoUrl } from '../types/workspace';
-import { getWorkspaceClient, useWorkspacesStore } from '../store/workspaces';
-import type { Workspace } from '../types/workspace';
+import { getWorkspaceClient, toErrorMessage, useWorkspacesStore } from '../store/workspaces';
 import type { GitHubRepoOption } from '../services/workspaces/types';
 
 type WorkspaceAction = 'clone' | 'create' | null;
@@ -42,7 +41,7 @@ export function buildDefaultCloneLocation(home: string): string {
   return `${normalizedHome}/kata/repos`;
 }
 
-export function deriveUniqueWorkspaceName(baseName: string, workspaces: Workspace[]): string {
+export function deriveUniqueWorkspaceName(baseName: string, workspaces: { name: string }[]): string {
   const normalizedBase = baseName.trim() || 'Workspace';
   const existingNames = new Set(workspaces.map((workspace) => workspace.name.toLowerCase()));
 
@@ -55,16 +54,6 @@ export function deriveUniqueWorkspaceName(baseName: string, workspaces: Workspac
     counter += 1;
   }
   return `${normalizedBase} ${counter}`;
-}
-
-export function toErrorMessage(error: unknown): string {
-  if (error instanceof Error && error.message.trim()) {
-    return error.message;
-  }
-  if (typeof error === 'string' && error.trim()) {
-    return error;
-  }
-  return 'Unexpected error';
 }
 
 export function normalizeSearchTokens(value: string): string[] {
@@ -120,6 +109,14 @@ export function rankRepos(repos: GitHubRepoOption[], query: string): GitHubRepoO
     .slice(0, 20);
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const HOME_DIR: string = typeof (globalThis as any).process?.env?.HOME === 'string'
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ? (globalThis as any).process.env.HOME
+  : '~';
+
+const DEFAULT_CLONE_LOCATION = buildDefaultCloneLocation(HOME_DIR);
+
 export function Workspaces() {
   const workspaces = useWorkspacesStore((state) => state.workspaces);
   const isCreating = useWorkspacesStore((state) => state.isCreating);
@@ -140,7 +137,7 @@ export function Workspaces() {
   const [isLoadingGithubRepos, setIsLoadingGithubRepos] = useState(false);
   const [hasLoadedGithubRepos, setHasLoadedGithubRepos] = useState(false);
   const [githubRepoSearchError, setGithubRepoSearchError] = useState<string | null>(null);
-  const [cloneLocation, setCloneLocation] = useState('');
+  const [cloneLocation, setCloneLocation] = useState(DEFAULT_CLONE_LOCATION);
   const [newRepositoryName, setNewRepositoryName] = useState('');
   const [isPickingLocalRepo, setIsPickingLocalRepo] = useState(false);
   const [isPickingCloneLocation, setIsPickingCloneLocation] = useState(false);
@@ -151,12 +148,11 @@ export function Workspaces() {
     void load();
   }, [load]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally resets form errors when action tab changes
   useEffect(() => {
-    if (cloneLocation.trim()) {
-      return;
-    }
-    setCloneLocation('/Users/me/kata/repos');
-  }, [cloneLocation]);
+    setFormError(null);
+    setGithubRepoSearchError(null);
+  }, [action]);
 
   useEffect(() => {
     if (action !== 'clone' || hasLoadedGithubRepos) {
@@ -299,9 +295,6 @@ export function Workspaces() {
         ),
         cloneRootPath: cloneLocation.trim(),
       });
-      if (!workspace) {
-        return;
-      }
 
       setCreatedRepoUrl(workspace.sourceType === 'github' ? workspace.source : null);
       setNewRepositoryName('');
@@ -331,23 +324,14 @@ export function Workspaces() {
           </button>
           <button
             type="button"
-            onClick={() => {
-              setAction('clone');
-              setFormError(null);
-              setGithubRepoSearchError(null);
-              setCreatedRepoUrl(null);
-            }}
+            onClick={() => setAction('clone')}
             className="rounded bg-slate-200 px-4 py-2 text-sm font-medium text-slate-900"
           >
             Clone Remote
           </button>
           <button
             type="button"
-            onClick={() => {
-              setAction('create');
-              setFormError(null);
-              setGithubRepoSearchError(null);
-            }}
+            onClick={() => setAction('create')}
             className="rounded bg-slate-200 px-4 py-2 text-sm font-medium text-slate-900"
           >
             Create New

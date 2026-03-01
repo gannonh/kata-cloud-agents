@@ -152,4 +152,83 @@ mod tests {
         store.set_active("ws_1").unwrap();
         assert_eq!(store.active_workspace_id(), Some("ws_1".to_string()));
     }
+
+    #[test]
+    fn set_active_returns_not_found_for_missing_id() {
+        let dir = tempdir().unwrap();
+        let store = &mut WorkspaceStore::new(dir.path());
+        let err = store.set_active("ws_missing").unwrap_err();
+        assert!(err.to_string().contains("not found"));
+    }
+
+    #[test]
+    fn archive_sets_status_and_clears_active_when_archiving_active_workspace() {
+        let dir = tempdir().unwrap();
+        let mut store = WorkspaceStore::new(dir.path());
+        store.insert(sample_workspace("ws_1"));
+        store.set_active("ws_1").unwrap();
+        assert_eq!(store.active_workspace_id(), Some("ws_1".to_string()));
+
+        store.archive("ws_1").unwrap();
+
+        let workspace = store.list().into_iter().find(|ws| ws.id == "ws_1").unwrap();
+        assert_eq!(workspace.status, WorkspaceStatus::Archived);
+        assert_eq!(store.active_workspace_id(), None);
+    }
+
+    #[test]
+    fn archive_preserves_active_when_archiving_non_active_workspace() {
+        let dir = tempdir().unwrap();
+        let mut store = WorkspaceStore::new(dir.path());
+        store.insert(sample_workspace("ws_1"));
+        store.insert(sample_workspace("ws_2"));
+        store.set_active("ws_2").unwrap();
+
+        store.archive("ws_1").unwrap();
+
+        assert_eq!(store.active_workspace_id(), Some("ws_2".to_string()));
+    }
+
+    #[test]
+    fn archive_returns_not_found_for_missing_id() {
+        let dir = tempdir().unwrap();
+        let store = &mut WorkspaceStore::new(dir.path());
+        let err = store.archive("ws_missing").unwrap_err();
+        assert!(err.to_string().contains("not found"));
+    }
+
+    #[test]
+    fn remove_returns_workspace_and_clears_active() {
+        let dir = tempdir().unwrap();
+        let mut store = WorkspaceStore::new(dir.path());
+        store.insert(sample_workspace("ws_1"));
+        store.set_active("ws_1").unwrap();
+
+        let removed = store.remove("ws_1").unwrap();
+        assert_eq!(removed.id, "ws_1");
+        assert_eq!(store.active_workspace_id(), None);
+        assert!(store.list().is_empty());
+    }
+
+    #[test]
+    fn remove_preserves_active_when_removing_non_active_workspace() {
+        let dir = tempdir().unwrap();
+        let mut store = WorkspaceStore::new(dir.path());
+        store.insert(sample_workspace("ws_1"));
+        store.insert(sample_workspace("ws_2"));
+        store.set_active("ws_2").unwrap();
+
+        store.remove("ws_1").unwrap();
+
+        assert_eq!(store.active_workspace_id(), Some("ws_2".to_string()));
+        assert_eq!(store.list().len(), 1);
+    }
+
+    #[test]
+    fn remove_returns_not_found_for_missing_id() {
+        let dir = tempdir().unwrap();
+        let store = &mut WorkspaceStore::new(dir.path());
+        let err = store.remove("ws_missing").unwrap_err();
+        assert!(err.to_string().contains("not found"));
+    }
 }

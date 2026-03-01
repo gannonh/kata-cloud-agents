@@ -15,9 +15,9 @@ interface WorkspacesState {
   isCreating: boolean;
   lastError: string | null;
   load: () => Promise<void>;
-  createLocal: (input: CreateLocalWorkspaceInput) => Promise<void>;
-  createGitHub: (input: CreateGitHubWorkspaceInput) => Promise<void>;
-  createNewGitHub: (input: CreateNewGitHubWorkspaceInput) => Promise<Workspace | null>;
+  createLocal: (input: CreateLocalWorkspaceInput) => Promise<Workspace>;
+  createGitHub: (input: CreateGitHubWorkspaceInput) => Promise<Workspace>;
+  createNewGitHub: (input: CreateNewGitHubWorkspaceInput) => Promise<Workspace>;
   setActive: (id: string) => Promise<void>;
   archive: (id: string) => Promise<void>;
   remove: (id: string, removeFiles: boolean) => Promise<void>;
@@ -32,7 +32,7 @@ const defaultState = {
 
 let workspaceClient: WorkspaceClient = defaultWorkspaceClient;
 
-function toErrorMessage(error: unknown): string {
+export function toErrorMessage(error: unknown): string {
   if (error instanceof Error && error.message.trim()) {
     return error.message;
   }
@@ -62,55 +62,11 @@ function toErrorMessage(error: unknown): string {
   return 'Unexpected error';
 }
 
-export const useWorkspacesStore = create<WorkspacesState>()((set) => ({
-  ...defaultState,
-
-  load: async () => {
-    try {
-      const [workspaces, activeWorkspaceId] = await Promise.all([
-        workspaceClient.list(),
-        workspaceClient.getActiveId(),
-      ]);
-      set({ workspaces, activeWorkspaceId, lastError: null });
-    } catch (error) {
-      set({ lastError: toErrorMessage(error) });
-    }
-  },
-
-  createLocal: async (input) => {
+export const useWorkspacesStore = create<WorkspacesState>()((set) => {
+  async function runCreate(clientCall: () => Promise<Workspace>): Promise<Workspace> {
     set({ isCreating: true, lastError: null });
     try {
-      const workspace = await workspaceClient.createLocal(input);
-      set((state) => ({
-        workspaces: [...state.workspaces, workspace],
-        activeWorkspaceId: workspace.id,
-      }));
-    } catch (error) {
-      set({ lastError: toErrorMessage(error) });
-    } finally {
-      set({ isCreating: false });
-    }
-  },
-
-  createGitHub: async (input) => {
-    set({ isCreating: true, lastError: null });
-    try {
-      const workspace = await workspaceClient.createGitHub(input);
-      set((state) => ({
-        workspaces: [...state.workspaces, workspace],
-        activeWorkspaceId: workspace.id,
-      }));
-    } catch (error) {
-      set({ lastError: toErrorMessage(error) });
-    } finally {
-      set({ isCreating: false });
-    }
-  },
-
-  createNewGitHub: async (input) => {
-    set({ isCreating: true, lastError: null });
-    try {
-      const workspace = await workspaceClient.createNewGitHub(input);
+      const workspace = await clientCall();
       set((state) => ({
         workspaces: [...state.workspaces, workspace],
         activeWorkspaceId: workspace.id,
@@ -118,51 +74,71 @@ export const useWorkspacesStore = create<WorkspacesState>()((set) => ({
       return workspace;
     } catch (error) {
       set({ lastError: toErrorMessage(error) });
-      return null;
+      throw error;
     } finally {
       set({ isCreating: false });
     }
-  },
+  }
 
-  setActive: async (id) => {
-    try {
-      await workspaceClient.setActive(id);
-      set({ activeWorkspaceId: id, lastError: null });
-    } catch (error) {
-      set({ lastError: toErrorMessage(error) });
-    }
-  },
+  return {
+    ...defaultState,
 
-  archive: async (id) => {
-    try {
-      await workspaceClient.archive(id);
-      set((state) => ({
-        workspaces: state.workspaces.map((workspace) =>
-          workspace.id === id
-            ? { ...workspace, status: 'archived', updatedAt: new Date().toISOString() }
-            : workspace,
-        ),
-        activeWorkspaceId: state.activeWorkspaceId === id ? null : state.activeWorkspaceId,
-        lastError: null,
-      }));
-    } catch (error) {
-      set({ lastError: toErrorMessage(error) });
-    }
-  },
+    load: async () => {
+      try {
+        const [workspaces, activeWorkspaceId] = await Promise.all([
+          workspaceClient.list(),
+          workspaceClient.getActiveId(),
+        ]);
+        set({ workspaces, activeWorkspaceId, lastError: null });
+      } catch (error) {
+        set({ lastError: toErrorMessage(error) });
+      }
+    },
 
-  remove: async (id, removeFiles) => {
-    try {
-      await workspaceClient.remove(id, removeFiles);
-      set((state) => ({
-        workspaces: state.workspaces.filter((workspace) => workspace.id !== id),
-        activeWorkspaceId: state.activeWorkspaceId === id ? null : state.activeWorkspaceId,
-        lastError: null,
-      }));
-    } catch (error) {
-      set({ lastError: toErrorMessage(error) });
-    }
-  },
-}));
+    createLocal: (input) => runCreate(() => workspaceClient.createLocal(input)),
+    createGitHub: (input) => runCreate(() => workspaceClient.createGitHub(input)),
+    createNewGitHub: (input) => runCreate(() => workspaceClient.createNewGitHub(input)),
+
+    setActive: async (id) => {
+      try {
+        await workspaceClient.setActive(id);
+        set({ activeWorkspaceId: id, lastError: null });
+      } catch (error) {
+        set({ lastError: toErrorMessage(error) });
+      }
+    },
+
+    archive: async (id) => {
+      try {
+        await workspaceClient.archive(id);
+        set((state) => ({
+          workspaces: state.workspaces.map((workspace) =>
+            workspace.id === id
+              ? { ...workspace, status: 'archived', updatedAt: new Date().toISOString() }
+              : workspace,
+          ),
+          activeWorkspaceId: state.activeWorkspaceId === id ? null : state.activeWorkspaceId,
+          lastError: null,
+        }));
+      } catch (error) {
+        set({ lastError: toErrorMessage(error) });
+      }
+    },
+
+    remove: async (id, removeFiles) => {
+      try {
+        await workspaceClient.remove(id, removeFiles);
+        set((state) => ({
+          workspaces: state.workspaces.filter((workspace) => workspace.id !== id),
+          activeWorkspaceId: state.activeWorkspaceId === id ? null : state.activeWorkspaceId,
+          lastError: null,
+        }));
+      } catch (error) {
+        set({ lastError: toErrorMessage(error) });
+      }
+    },
+  };
+});
 
 export function setWorkspaceClient(client: WorkspaceClient): void {
   workspaceClient = client;

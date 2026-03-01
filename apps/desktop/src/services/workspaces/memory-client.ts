@@ -215,7 +215,8 @@ export function createMemoryWorkspaceClient(
         state.activeWorkspaceId = null;
       }
     },
-    remove: async (id: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    remove: async (id: string, _removeFiles: boolean) => {
       const next = state.workspaces.filter((workspace) => workspace.id !== id);
       if (next.length === state.workspaces.length) {
         throw new Error(`Workspace not found: ${id}`);

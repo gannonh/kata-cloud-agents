@@ -18,8 +18,10 @@ describe('dialog service', () => {
   beforeEach(resetTauriGlobals);
   afterEach(resetTauriGlobals);
 
-  test('returns null when tauri runtime is unavailable', async () => {
-    await expect(pickDirectory('/tmp/repos')).resolves.toBeNull();
+  test('throws when tauri runtime is unavailable', async () => {
+    await expect(pickDirectory('/tmp/repos')).rejects.toThrow(
+      'File picker requires the desktop application runtime.',
+    );
   });
 
   test('invokes tauri command when runtime is available', async () => {

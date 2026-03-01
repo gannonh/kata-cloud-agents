@@ -16,6 +16,13 @@ export function createWorkspaceClient(forceTauriRuntime?: boolean): WorkspaceCli
     return createTauriWorkspaceClient();
   }
 
+  if (typeof import.meta.env?.VITEST === 'undefined') {
+    console.warn(
+      '[workspaces] Tauri runtime not detected. Using in-memory client. ' +
+        'Workspace operations will not persist.',
+    );
+  }
+
   return createMemoryWorkspaceClient();
 }
 

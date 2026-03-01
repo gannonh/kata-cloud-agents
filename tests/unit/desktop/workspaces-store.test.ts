@@ -29,6 +29,14 @@ describe('useWorkspacesStore', () => {
     expect(state.activeWorkspaceId).toBe(state.workspaces[0]?.id ?? null);
   });
 
+  test('createLocal returns the created workspace', async () => {
+    const workspace = await useWorkspacesStore
+      .getState()
+      .createLocal({ repoPath: '/tmp/repo', workspaceName: 'KAT-154' });
+    expect(workspace.name).toBe('KAT-154');
+    expect(workspace.id).toBeTruthy();
+  });
+
   test('createGitHub archive and remove lifecycle', async () => {
     const store = useWorkspacesStore.getState();
     await store.createGitHub({
@@ -55,16 +63,15 @@ describe('useWorkspacesStore', () => {
   });
 
   test('createNewGitHub appends and sets active workspace', async () => {
-    await useWorkspacesStore.getState().createNewGitHub({
+    const workspace = await useWorkspacesStore.getState().createNewGitHub({
       repositoryName: 'kat-154-created',
       workspaceName: 'kat-154-created',
       cloneRootPath: '/tmp/repos',
     });
 
+    expect(workspace.name).toBe('kat-154-created');
     const state = useWorkspacesStore.getState();
-    const created = state.workspaces[0];
-    expect(created?.name).toBe('kat-154-created');
-    expect(state.activeWorkspaceId).toBe(created?.id ?? null);
+    expect(state.activeWorkspaceId).toBe(workspace.id);
   });
 
   test('archiving a non-active workspace preserves active selection', async () => {
@@ -113,7 +120,56 @@ describe('useWorkspacesStore', () => {
     expect(useWorkspacesStore.getState().activeWorkspaceId).toBe(first.id);
   });
 
-  test('stores errors from failing client actions', async () => {
+  test('create actions re-throw errors after setting lastError', async () => {
+    const failingClient: WorkspaceClient = {
+      list: async () => [],
+      listGitHubRepos: async () => [],
+      createLocal: async () => {
+        throw new Error('local failed');
+      },
+      createGitHub: async () => {
+        throw new Error('github failed');
+      },
+      createNewGitHub: async () => {
+        throw new Error('github new failed');
+      },
+      setActive: async () => {},
+      getActiveId: async () => null,
+      archive: async () => {},
+      remove: async () => {},
+    };
+
+    setWorkspaceClient(failingClient);
+    resetWorkspacesStore();
+
+    await expect(
+      useWorkspacesStore
+        .getState()
+        .createLocal({ repoPath: '/tmp/repo', workspaceName: 'KAT-154' }),
+    ).rejects.toThrow('local failed');
+    expect(useWorkspacesStore.getState().lastError).toBe('local failed');
+    expect(useWorkspacesStore.getState().isCreating).toBe(false);
+
+    await expect(
+      useWorkspacesStore
+        .getState()
+        .createGitHub({ repoUrl: 'https://github.com/org/repo', workspaceName: 'KAT-154' }),
+    ).rejects.toThrow('github failed');
+    expect(useWorkspacesStore.getState().lastError).toBe('github failed');
+    expect(useWorkspacesStore.getState().isCreating).toBe(false);
+
+    await expect(
+      useWorkspacesStore.getState().createNewGitHub({
+        repositoryName: 'kat-154-created',
+        workspaceName: 'KAT-154',
+        cloneRootPath: '/tmp/repos',
+      }),
+    ).rejects.toThrow('github new failed');
+    expect(useWorkspacesStore.getState().lastError).toBe('github new failed');
+    expect(useWorkspacesStore.getState().isCreating).toBe(false);
+  });
+
+  test('stores errors from failing non-create client actions', async () => {
     const failingClient: WorkspaceClient = {
       list: async () => {
         throw new Error('load failed');
@@ -145,26 +201,6 @@ describe('useWorkspacesStore', () => {
 
     await useWorkspacesStore.getState().load();
     expect(useWorkspacesStore.getState().lastError).toBe('load failed');
-
-    await useWorkspacesStore
-      .getState()
-      .createLocal({ repoPath: '/tmp/repo', workspaceName: 'KAT-154' });
-    expect(useWorkspacesStore.getState().lastError).toBe('local failed');
-    expect(useWorkspacesStore.getState().isCreating).toBe(false);
-
-    await useWorkspacesStore
-      .getState()
-      .createGitHub({ repoUrl: 'https://github.com/org/repo', workspaceName: 'KAT-154' });
-    expect(useWorkspacesStore.getState().lastError).toBe('github failed');
-    expect(useWorkspacesStore.getState().isCreating).toBe(false);
-
-    await useWorkspacesStore.getState().createNewGitHub({
-      repositoryName: 'kat-154-created',
-      workspaceName: 'KAT-154',
-      cloneRootPath: '/tmp/repos',
-    });
-    expect(useWorkspacesStore.getState().lastError).toBe('github new failed');
-    expect(useWorkspacesStore.getState().isCreating).toBe(false);
 
     await useWorkspacesStore.getState().setActive('ws_missing');
     expect(useWorkspacesStore.getState().lastError).toBe('active failed');
@@ -246,21 +282,27 @@ describe('useWorkspacesStore', () => {
     await useWorkspacesStore.getState().load();
     expect(useWorkspacesStore.getState().lastError).toBe('object message');
 
-    await useWorkspacesStore
-      .getState()
-      .createLocal({ repoPath: '/tmp/repo', workspaceName: 'KAT-154' });
+    await expect(
+      useWorkspacesStore
+        .getState()
+        .createLocal({ repoPath: '/tmp/repo', workspaceName: 'KAT-154' }),
+    ).rejects.toBeTruthy();
     expect(useWorkspacesStore.getState().lastError).toBe('top level error field');
 
-    await useWorkspacesStore
-      .getState()
-      .createGitHub({ repoUrl: 'https://github.com/org/repo', workspaceName: 'KAT-154' });
+    await expect(
+      useWorkspacesStore
+        .getState()
+        .createGitHub({ repoUrl: 'https://github.com/org/repo', workspaceName: 'KAT-154' }),
+    ).rejects.toBeTruthy();
     expect(useWorkspacesStore.getState().lastError).toBe('nested error message');
 
-    await useWorkspacesStore.getState().createNewGitHub({
-      repositoryName: 'kat-154-created',
-      workspaceName: 'KAT-154',
-      cloneRootPath: '/tmp/repos',
-    });
+    await expect(
+      useWorkspacesStore.getState().createNewGitHub({
+        repositoryName: 'kat-154-created',
+        workspaceName: 'KAT-154',
+        cloneRootPath: '/tmp/repos',
+      }),
+    ).rejects.toBeTruthy();
     expect(useWorkspacesStore.getState().lastError).toBe('new repo object message');
 
     await useWorkspacesStore.getState().setActive('ws_missing');

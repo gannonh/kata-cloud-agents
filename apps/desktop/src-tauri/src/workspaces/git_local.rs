@@ -1,5 +1,5 @@
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process::Command;
 
 use super::model::{derive_workspace_branch_name, slugify_name, PreparedWorkspace};
@@ -43,9 +43,10 @@ pub fn create_local_workspace(
         )));
     }
 
-    let resolved_base_ref = base_ref
-        .filter(|value| !value.trim().is_empty())
-        .unwrap_or_else(|| detect_default_base_ref(repo_path).unwrap_or_else(|_| "HEAD".to_string()));
+    let resolved_base_ref = match base_ref.filter(|value| !value.trim().is_empty()) {
+        Some(explicit) => explicit,
+        None => detect_default_base_ref(repo_path)?,
+    };
 
     let worktree_path = workspaces_root.join(format!("{}-{}", slugify_name(workspace_name), suffix));
     if worktree_path.exists() {
@@ -135,8 +136,7 @@ fn run_git(repo_path: &Path, args: &[&str]) -> Result<String, WorkspaceError> {
 }
 
 fn canonicalize_path(path: &Path) -> Result<String, WorkspaceError> {
-    let canonicalized = PathBuf::from(path).canonicalize()?;
-    Ok(canonicalized.to_string_lossy().to_string())
+    Ok(path.canonicalize()?.to_string_lossy().to_string())
 }
 
 #[cfg(test)]
