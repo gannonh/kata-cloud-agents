@@ -86,7 +86,17 @@ fn repo_match_score(repo: &GitHubRepoOption, query_tokens: &[String]) -> i32 {
 }
 
 #[tauri::command]
-pub fn workspace_list_github_repos(query: Option<String>) -> Result<Vec<GitHubRepoOption>, String> {
+pub async fn workspace_list_github_repos(
+    query: Option<String>,
+) -> Result<Vec<GitHubRepoOption>, String> {
+    tauri::async_runtime::spawn_blocking(move || workspace_list_github_repos_blocking(query))
+        .await
+        .map_err(|err| format!("Failed to load GitHub repositories: {err}"))?
+}
+
+fn workspace_list_github_repos_blocking(
+    query: Option<String>,
+) -> Result<Vec<GitHubRepoOption>, String> {
     let output = Command::new("gh")
         .args([
             "repo",

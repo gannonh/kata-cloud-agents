@@ -57,6 +57,59 @@ function toErrorMessage(error: unknown): string {
   return 'Unexpected error';
 }
 
+function normalizeSearchTokens(value: string): string[] {
+  return value
+    .toLowerCase()
+    .split(/\s+/)
+    .map((token) => token.trim())
+    .filter(Boolean);
+}
+
+function repoMatchScore(repo: GitHubRepoOption, query: string): number {
+  const tokens = normalizeSearchTokens(query);
+  if (!tokens.length) {
+    return 1;
+  }
+
+  const name = repo.nameWithOwner.toLowerCase();
+  const url = repo.url.toLowerCase();
+  const haystack = `${name} ${url}`;
+  if (!tokens.every((token) => haystack.includes(token))) {
+    return 0;
+  }
+
+  let score = 10;
+  for (const token of tokens) {
+    if (name === token || url === token) {
+      score += 150;
+    } else if (name.startsWith(token)) {
+      score += 80;
+    } else if (url.startsWith(token)) {
+      score += 60;
+    } else if (name.includes(token)) {
+      score += 30;
+    } else if (url.includes(token)) {
+      score += 20;
+    }
+  }
+
+  return score;
+}
+
+function rankRepos(repos: GitHubRepoOption[], query: string): GitHubRepoOption[] {
+  return repos
+    .map((repo) => ({ repo, score: repoMatchScore(repo, query) }))
+    .filter((entry) => entry.score > 0)
+    .sort((left, right) => {
+      if (left.score !== right.score) {
+        return right.score - left.score;
+      }
+      return right.repo.updatedAt.localeCompare(left.repo.updatedAt);
+    })
+    .map((entry) => entry.repo)
+    .slice(0, 20);
+}
+
 export function Workspaces() {
   const workspaces = useWorkspacesStore((state) => state.workspaces);
   const isCreating = useWorkspacesStore((state) => state.isCreating);
@@ -70,8 +123,11 @@ export function Workspaces() {
   const [action, setAction] = useState<WorkspaceAction>(null);
 
   const [githubRepoUrl, setGithubRepoUrl] = useState('');
+  const [allGithubRepos, setAllGithubRepos] = useState<GitHubRepoOption[]>([]);
   const [githubRepoSearchResults, setGithubRepoSearchResults] = useState<GitHubRepoOption[]>([]);
+  const [debouncedRepoQuery, setDebouncedRepoQuery] = useState('');
   const [isLoadingGithubRepos, setIsLoadingGithubRepos] = useState(false);
+  const [hasLoadedGithubRepos, setHasLoadedGithubRepos] = useState(false);
   const [githubRepoSearchError, setGithubRepoSearchError] = useState<string | null>(null);
   const [cloneLocation, setCloneLocation] = useState('');
   const [isPickingLocalRepo, setIsPickingLocalRepo] = useState(false);
@@ -103,22 +159,23 @@ export function Workspaces() {
   }, [cloneLocation]);
 
   useEffect(() => {
-    if (action !== 'clone') {
+    if (action !== 'clone' || hasLoadedGithubRepos) {
       return;
     }
 
     let canceled = false;
-    const timer = window.setTimeout(async () => {
+    void (async () => {
       setIsLoadingGithubRepos(true);
       setGithubRepoSearchError(null);
       try {
-        const repos = await getWorkspaceClient().listGitHubRepos(githubRepoUrl);
-        if (!canceled) {
-          setGithubRepoSearchResults(repos);
+        const repos = await getWorkspaceClient().listGitHubRepos();
+        if (canceled) {
+          return;
         }
+        setAllGithubRepos(repos);
+        setHasLoadedGithubRepos(true);
       } catch (error) {
         if (!canceled) {
-          setGithubRepoSearchResults([]);
           setGithubRepoSearchError(toErrorMessage(error));
         }
       } finally {
@@ -126,13 +183,33 @@ export function Workspaces() {
           setIsLoadingGithubRepos(false);
         }
       }
-    }, 180);
+    })();
 
     return () => {
       canceled = true;
+    };
+  }, [action, hasLoadedGithubRepos]);
+
+  useEffect(() => {
+    if (action !== 'clone') {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setDebouncedRepoQuery(githubRepoUrl);
+    }, 280);
+
+    return () => {
       window.clearTimeout(timer);
     };
   }, [action, githubRepoUrl]);
+
+  useEffect(() => {
+    if (action !== 'clone') {
+      return;
+    }
+    setGithubRepoSearchResults(rankRepos(allGithubRepos, debouncedRepoQuery));
+  }, [action, allGithubRepos, debouncedRepoQuery]);
 
   async function onPickLocalRepo() {
     setFormError(null);
@@ -252,15 +329,22 @@ export function Workspaces() {
           <form onSubmit={onSubmitClone} className="mt-4 space-y-4">
             <label className="block text-sm text-slate-200">
               GitHub repository URL
-              <input
-                value={githubRepoUrl}
-                onChange={(event) => setGithubRepoUrl(event.target.value)}
-                className="mt-1 block w-full rounded border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100"
-                placeholder="https://github.com/org/repo"
-              />
-              {isLoadingGithubRepos ? (
-                <p className="mt-2 text-xs text-slate-400">Searching your repositories...</p>
-              ) : null}
+              <div className="relative mt-1">
+                <input
+                  value={githubRepoUrl}
+                  onChange={(event) => setGithubRepoUrl(event.target.value)}
+                  className="block w-full rounded border border-slate-700 bg-slate-950 px-3 py-2 pr-10 text-slate-100"
+                  placeholder="https://github.com/org/repo"
+                />
+                {isLoadingGithubRepos ? (
+                  <span
+                    className="absolute inset-y-0 right-3 flex items-center"
+                    aria-label="Loading repositories"
+                  >
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-500 border-t-slate-100" />
+                  </span>
+                ) : null}
+              </div>
               {githubRepoSearchError ? (
                 <p className="mt-2 text-xs text-rose-400">{githubRepoSearchError}</p>
               ) : null}

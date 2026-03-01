@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 
@@ -10,6 +10,7 @@ import {
   resetWorkspacesStore,
   setWorkspaceClient,
 } from '../../../apps/desktop/src/store/workspaces';
+import type { WorkspaceClient } from '../../../apps/desktop/src/services/workspaces/types';
 
 vi.mock('../../../apps/desktop/src/services/system/dialog', () => ({
   pickDirectory: vi.fn(),
@@ -108,5 +109,75 @@ describe('Workspaces page', () => {
 
     await user.click(screen.getByRole('button', { name: /remove/i }));
     expect(screen.queryByText(/^kat-154-actions$/i)).not.toBeInTheDocument();
+  });
+
+  test('shows progress indicator in github url field while loading repos', async () => {
+    let resolveRepos: ((value: unknown) => void) | null = null;
+    const listGitHubRepos = vi.fn(
+      async () =>
+        new Promise((resolve) => {
+          resolveRepos = resolve;
+        }),
+    );
+    const client: WorkspaceClient = {
+      ...createMemoryWorkspaceClient(),
+      listGitHubRepos,
+    };
+    setWorkspaceClient(client);
+    resetWorkspacesStore();
+
+    const user = userEvent.setup();
+    render(<Workspaces />);
+    await user.click(screen.getByRole('button', { name: /clone remote/i }));
+
+    expect(await screen.findByLabelText(/loading repositories/i)).toBeInTheDocument();
+    resolveRepos?.([
+      {
+        nameWithOwner: 'org/repo',
+        url: 'https://github.com/org/repo',
+        isPrivate: true,
+        updatedAt: '2026-02-28T00:00:00.000Z',
+      },
+    ]);
+
+    await waitFor(() => {
+      expect(screen.queryByLabelText(/loading repositories/i)).not.toBeInTheDocument();
+    });
+  });
+
+  test('loads github repos once and uses local debounced filtering', async () => {
+    const listGitHubRepos = vi.fn(async () => [
+      {
+        nameWithOwner: 'org/repo-one',
+        url: 'https://github.com/org/repo-one',
+        isPrivate: true,
+        updatedAt: '2026-02-28T00:00:00.000Z',
+      },
+      {
+        nameWithOwner: 'org/repo-two',
+        url: 'https://github.com/org/repo-two',
+        isPrivate: false,
+        updatedAt: '2026-02-27T00:00:00.000Z',
+      },
+    ]);
+    const client: WorkspaceClient = {
+      ...createMemoryWorkspaceClient(),
+      listGitHubRepos,
+    };
+    setWorkspaceClient(client);
+    resetWorkspacesStore();
+
+    const user = userEvent.setup();
+    render(<Workspaces />);
+    await user.click(screen.getByRole('button', { name: /clone remote/i }));
+    await waitFor(() => {
+      expect(listGitHubRepos).toHaveBeenCalledTimes(1);
+    });
+
+    await user.type(screen.getByLabelText(/github repository url/i), 'repo-two');
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /org\/repo-two/i })).toBeInTheDocument();
+    });
+    expect(listGitHubRepos).toHaveBeenCalledTimes(1);
   });
 });
