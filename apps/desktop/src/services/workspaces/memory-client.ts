@@ -92,7 +92,7 @@ export function createMemoryWorkspaceClient(
 ): WorkspaceClient {
   const state: MemoryWorkspaceState = {
     activeWorkspaceId: initialState.activeWorkspaceId ?? null,
-    workspaces: initialState.workspaces ?? [],
+    workspaces: (initialState.workspaces ?? []).map((ws) => ({ ...ws })),
   };
 
   return {

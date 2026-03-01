@@ -57,7 +57,8 @@ describe('Workspaces page', () => {
     render(<Workspaces />);
 
     await user.click(screen.getByRole('button', { name: /local repo/i }));
-    expect(screen.queryByText(/^workspace$/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/no workspaces yet/i)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /archive/i })).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: /local repo/i }));
     expect(await screen.findByRole('alert')).toHaveTextContent('picker failed');
@@ -238,25 +239,36 @@ describe('Workspaces page', () => {
   });
 
   test('handles async cancellation when unmounting during github repo load', async () => {
-    let resolveRepos: ((value: GitHubRepoOption[]) => void) | null = null;
-    const listGitHubRepos = vi.fn(
-      async () =>
-        new Promise<GitHubRepoOption[]>((resolve) => {
-          resolveRepos = resolve;
-        }),
-    );
-    const client: WorkspaceClient = {
-      ...createMemoryWorkspaceClient(),
-      listGitHubRepos,
-    };
-    setWorkspaceClient(client);
-    resetWorkspacesStore();
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      let resolveRepos: ((value: GitHubRepoOption[]) => void) | null = null;
+      const listGitHubRepos = vi.fn(
+        async () =>
+          new Promise<GitHubRepoOption[]>((resolve) => {
+            resolveRepos = resolve;
+          }),
+      );
+      const client: WorkspaceClient = {
+        ...createMemoryWorkspaceClient(),
+        listGitHubRepos,
+      };
+      setWorkspaceClient(client);
+      resetWorkspacesStore();
 
-    const user = userEvent.setup();
-    const { unmount } = render(<Workspaces />);
-    await user.click(screen.getByRole('button', { name: /clone remote/i }));
-    unmount();
-    resolveRepos?.([]);
+      const user = userEvent.setup();
+      const { unmount } = render(<Workspaces />);
+      await user.click(screen.getByRole('button', { name: /clone remote/i }));
+      await waitFor(() => {
+        expect(listGitHubRepos).toHaveBeenCalledTimes(1);
+      });
+      unmount();
+      resolveRepos?.([]);
+      await waitFor(() => {
+        expect(consoleErrorSpy).not.toHaveBeenCalled();
+      });
+    } finally {
+      consoleErrorSpy.mockRestore();
+    }
   });
 
   test('loads github repos once and uses local debounced filtering', async () => {
