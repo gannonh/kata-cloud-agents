@@ -44,6 +44,17 @@ describe('workspace memory client', () => {
     expect(ws.repoRootPath).toBe('/tmp/repos/kat-154-created');
   });
 
+  test('defaults create new clone root and accepts owner/repo form', async () => {
+    const client = createMemoryWorkspaceClient();
+    const ws = await client.createNewGitHub({
+      repositoryName: 'kata-sh/kat-154-created.git',
+      workspaceName: 'KAT-154 Created',
+    });
+
+    expect(ws.source).toBe('https://github.com/kata-sh/kat-154-created');
+    expect(ws.repoRootPath).toBe('/tmp/repos/kat-154-created');
+  });
+
   test('supports seeded state defaults', async () => {
     const client = createMemoryWorkspaceClient({
       activeWorkspaceId: 'ws_seed',
@@ -100,6 +111,81 @@ describe('workspace memory client', () => {
     await expect(client.setActive('missing')).rejects.toThrow(/not found/i);
     await expect(client.archive('missing')).rejects.toThrow(/not found/i);
     await expect(client.remove('missing', false)).rejects.toThrow(/not found/i);
+  });
+
+  test('throws for invalid create-new repository names', async () => {
+    const client = createMemoryWorkspaceClient();
+    await expect(
+      client.createNewGitHub({
+        repositoryName: '  ',
+        workspaceName: 'KAT-154',
+      }),
+    ).rejects.toThrow(/repository name is required/i);
+    await expect(
+      client.createNewGitHub({
+        repositoryName: 'owner/repo/extra',
+        workspaceName: 'KAT-154',
+      }),
+    ).rejects.toThrow(/<owner>\/<name>/i);
+    await expect(
+      client.createNewGitHub({
+        repositoryName: '////',
+        workspaceName: 'KAT-154',
+      }),
+    ).rejects.toThrow(/<owner>\/<name>/i);
+  });
+
+  test('lists github repo suggestions from existing github workspaces', async () => {
+    const now = '2026-02-28T00:00:00.000Z';
+    const client = createMemoryWorkspaceClient({
+      workspaces: [
+        {
+          id: 'ws_a',
+          name: 'A',
+          sourceType: 'github',
+          source: 'https://github.com/kata-sh/repo-a.git',
+          repoRootPath: '/tmp/repo-a',
+          worktreePath: '/tmp/repo-a.worktrees/a',
+          branch: 'workspace/a',
+          status: 'ready',
+          createdAt: now,
+          updatedAt: now,
+        },
+        {
+          id: 'ws_b',
+          name: 'B',
+          sourceType: 'github',
+          source: 'not a valid url',
+          repoRootPath: '/tmp/repo-b',
+          worktreePath: '/tmp/repo-b.worktrees/b',
+          branch: 'workspace/b',
+          status: 'ready',
+          createdAt: now,
+          updatedAt: now,
+        },
+        {
+          id: 'ws_local',
+          name: 'Local',
+          sourceType: 'local',
+          source: '/tmp/local',
+          repoRootPath: '/tmp/local',
+          worktreePath: '/tmp/local.worktrees/local',
+          branch: 'workspace/local',
+          status: 'ready',
+          createdAt: now,
+          updatedAt: now,
+        },
+      ],
+    });
+
+    const all = await client.listGitHubRepos();
+    expect(all).toHaveLength(2);
+    expect(all.map((repo) => repo.nameWithOwner)).toContain('kata-sh/repo-a');
+    expect(all.map((repo) => repo.nameWithOwner)).toContain('not a valid url');
+
+    const filtered = await client.listGitHubRepos('repo-a');
+    expect(filtered).toHaveLength(1);
+    expect(filtered[0]?.url).toBe('https://github.com/kata-sh/repo-a.git');
   });
 
   test('handles slug/id fallbacks when input and runtime entropy are minimal', async () => {

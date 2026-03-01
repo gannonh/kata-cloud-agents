@@ -1,7 +1,5 @@
 import { type FormEvent, useEffect, useState } from 'react';
-import { homeDir } from '@tauri-apps/api/path';
 
-import { hasTauriRuntime } from '../services/workspaces';
 import { pickDirectory } from '../services/system/dialog';
 import { isGitHubRepoUrl } from '../types/workspace';
 import { getWorkspaceClient, useWorkspacesStore } from '../store/workspaces';
@@ -10,13 +8,13 @@ import type { GitHubRepoOption } from '../services/workspaces/types';
 
 type WorkspaceAction = 'clone' | 'create' | null;
 
-function deriveNameFromRepoPath(repoPath: string): string {
+export function deriveNameFromRepoPath(repoPath: string): string {
   const sanitized = repoPath.trim().replace(/\/+$/, '');
   const segment = sanitized.split('/').pop() ?? '';
   return segment.trim() || 'Workspace';
 }
 
-function deriveNameFromRepoUrl(repoUrl: string): string {
+export function deriveNameFromRepoUrl(repoUrl: string): string {
   try {
     const parsed = new URL(repoUrl);
     const lastSegment = parsed.pathname.split('/').filter(Boolean).at(-1) ?? '';
@@ -27,7 +25,7 @@ function deriveNameFromRepoUrl(repoUrl: string): string {
   }
 }
 
-function deriveNameFromRepositoryInput(repositoryName: string): string {
+export function deriveNameFromRepositoryInput(repositoryName: string): string {
   const normalized = repositoryName.trim().replace(/\.git$/i, '');
   if (!normalized) {
     return 'Workspace';
@@ -39,12 +37,12 @@ function deriveNameFromRepositoryInput(repositoryName: string): string {
   return parts.at(-1) || 'Workspace';
 }
 
-function buildDefaultCloneLocation(home: string): string {
+export function buildDefaultCloneLocation(home: string): string {
   const normalizedHome = home.trim().replace(/[\\/]+$/, '');
   return `${normalizedHome}/kata/repos`;
 }
 
-function deriveUniqueWorkspaceName(baseName: string, workspaces: Workspace[]): string {
+export function deriveUniqueWorkspaceName(baseName: string, workspaces: Workspace[]): string {
   const normalizedBase = baseName.trim() || 'Workspace';
   const existingNames = new Set(workspaces.map((workspace) => workspace.name.toLowerCase()));
 
@@ -59,7 +57,7 @@ function deriveUniqueWorkspaceName(baseName: string, workspaces: Workspace[]): s
   return `${normalizedBase} ${counter}`;
 }
 
-function toErrorMessage(error: unknown): string {
+export function toErrorMessage(error: unknown): string {
   if (error instanceof Error && error.message.trim()) {
     return error.message;
   }
@@ -69,7 +67,7 @@ function toErrorMessage(error: unknown): string {
   return 'Unexpected error';
 }
 
-function normalizeSearchTokens(value: string): string[] {
+export function normalizeSearchTokens(value: string): string[] {
   return value
     .toLowerCase()
     .split(/\s+/)
@@ -77,7 +75,7 @@ function normalizeSearchTokens(value: string): string[] {
     .filter(Boolean);
 }
 
-function repoMatchScore(repo: GitHubRepoOption, query: string): number {
+export function repoMatchScore(repo: GitHubRepoOption, query: string): number {
   const tokens = normalizeSearchTokens(query);
   if (!tokens.length) {
     return 1;
@@ -108,7 +106,7 @@ function repoMatchScore(repo: GitHubRepoOption, query: string): number {
   return score;
 }
 
-function rankRepos(repos: GitHubRepoOption[], query: string): GitHubRepoOption[] {
+export function rankRepos(repos: GitHubRepoOption[], query: string): GitHubRepoOption[] {
   return repos
     .map((repo) => ({ repo, score: repoMatchScore(repo, query) }))
     .filter((entry) => entry.score > 0)
@@ -157,20 +155,7 @@ export function Workspaces() {
     if (cloneLocation.trim()) {
       return;
     }
-
-    void (async () => {
-      if (!hasTauriRuntime()) {
-        setCloneLocation('/Users/me/kata/repos');
-        return;
-      }
-
-      try {
-        const home = await homeDir();
-        setCloneLocation(buildDefaultCloneLocation(home));
-      } catch {
-        setCloneLocation('/Users/me/kata/repos');
-      }
-    })();
+    setCloneLocation('/Users/me/kata/repos');
   }, [cloneLocation]);
 
   useEffect(() => {
@@ -279,11 +264,6 @@ export function Workspaces() {
       setFormError('Only github.com repositories are supported.');
       return;
     }
-    if (!cloneLocation.trim()) {
-      setFormError('Repo location is required.');
-      return;
-    }
-
     await createGitHub({
       repoUrl: githubRepoUrl.trim(),
       workspaceName: deriveUniqueWorkspaceName(
@@ -306,11 +286,6 @@ export function Workspaces() {
       setFormError('Repository name is required.');
       return;
     }
-    if (!cloneLocation.trim()) {
-      setFormError('Repo location is required.');
-      return;
-    }
-
     const workspace = await createNewGitHub({
       repositoryName: newRepositoryName.trim(),
       workspaceName: deriveUniqueWorkspaceName(

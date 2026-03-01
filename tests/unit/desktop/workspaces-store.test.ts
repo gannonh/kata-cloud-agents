@@ -89,6 +89,30 @@ describe('useWorkspacesStore', () => {
     );
   });
 
+  test('setActive success and remove non-active preserve active selection', async () => {
+    await useWorkspacesStore
+      .getState()
+      .createLocal({ repoPath: '/tmp/repo', workspaceName: 'Workspace A' });
+    const first = useWorkspacesStore.getState().workspaces[0];
+    if (!first) {
+      throw new Error('expected first workspace');
+    }
+
+    await useWorkspacesStore
+      .getState()
+      .createLocal({ repoPath: '/tmp/repo', workspaceName: 'Workspace B' });
+    const second = useWorkspacesStore.getState().workspaces[1];
+    if (!second) {
+      throw new Error('expected second workspace');
+    }
+
+    await useWorkspacesStore.getState().setActive(first.id);
+    expect(useWorkspacesStore.getState().activeWorkspaceId).toBe(first.id);
+
+    await useWorkspacesStore.getState().remove(second.id, false);
+    expect(useWorkspacesStore.getState().activeWorkspaceId).toBe(first.id);
+  });
+
   test('stores errors from failing client actions', async () => {
     const failingClient: WorkspaceClient = {
       list: async () => {

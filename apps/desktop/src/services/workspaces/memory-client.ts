@@ -46,9 +46,6 @@ function parseRepositoryInput(repositoryName: string): {
   }
 
   const [owner, repo] = segments.length === 2 ? segments : ['me', segments[0]];
-  if (!repo) {
-    throw new Error('Repository name is required');
-  }
 
   return {
     owner,
