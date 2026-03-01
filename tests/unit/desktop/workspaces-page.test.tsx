@@ -515,6 +515,35 @@ describe('Workspaces page', () => {
     expect(await screen.findByText(/^kata-cloud-agents$/i)).toBeInTheDocument();
   });
 
+  test('create from modal shows error and stays open on failure', async () => {
+    const user = userEvent.setup();
+    const failureClient: WorkspaceClient = {
+      ...createMemoryWorkspaceClient({ workspaces: [seededGithubWorkspace()] }),
+      createFromSource: async () => {
+        throw new Error('create from failed');
+      },
+    };
+    setWorkspaceClient(failureClient);
+    resetWorkspacesStore();
+    renderWorkspaces();
+
+    const repoButton = await screen.findByRole('button', { name: /kata-sh\/kata-cloud-agents/i });
+    const repoRow = repoButton.closest('li');
+    if (!repoRow) {
+      throw new Error('expected known repo row');
+    }
+    await user.click(within(repoRow).getByRole('button', { name: /^create from\.\.\./i }));
+
+    expect(await screen.findByRole('dialog', { name: /create workspace/i })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /branches/i }));
+    await user.click(await screen.findByRole('button', { name: /feature\/kata-cloud-agents-next/i }));
+    await user.click(screen.getByRole('button', { name: /create workspace/i }));
+
+    const alerts = await screen.findAllByRole('alert');
+    expect(alerts.some((el) => el.textContent?.includes('create from failed'))).toBe(true);
+    expect(screen.getByRole('dialog', { name: /create workspace/i })).toBeInTheDocument();
+  });
+
   test('opens create-from modal from top affordance and cmd/ctrl+n hotkey', async () => {
     const user = userEvent.setup();
     setWorkspaceClient(

@@ -341,6 +341,7 @@ export function Workspaces() {
       await loadKnownRepos();
     } catch (error) {
       setFormError(toErrorMessage(error));
+      throw error;
     }
   }
 
