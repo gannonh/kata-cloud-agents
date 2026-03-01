@@ -5,9 +5,10 @@ import { describe, expect, test } from 'vitest';
 import { App } from '../../../apps/desktop/src/App';
 
 describe('desktop app navigation', () => {
-  test('renders dashboard as default route', () => {
+  test('renders workspaces as default route', () => {
     render(<App />);
-    expect(screen.getByRole('heading', { name: 'Dashboard' })).toBeInTheDocument();
+    const main = screen.getByRole('main');
+    expect(within(main).getByRole('heading', { name: 'Workspaces' })).toBeInTheDocument();
   });
 
   test('renders breadcrumb scaffolding for the active route', () => {
@@ -15,7 +16,7 @@ describe('desktop app navigation', () => {
     const breadcrumbs = screen.getByRole('navigation', { name: /breadcrumbs/i });
     expect(breadcrumbs).toBeInTheDocument();
     expect(breadcrumbs).toHaveTextContent('Overview');
-    expect(breadcrumbs).toHaveTextContent('Dashboard');
+    expect(breadcrumbs).toHaveTextContent('Workspaces');
   });
 
   test.each([
