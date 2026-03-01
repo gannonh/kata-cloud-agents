@@ -337,14 +337,10 @@ export function Workspaces() {
                   placeholder="https://github.com/org/repo"
                 />
                 {isLoadingGithubRepos ? (
-                  <span
-                    className="absolute inset-y-0 right-3 flex items-center"
-                    role="status"
-                    aria-live="polite"
-                  >
+                  <output className="absolute inset-y-0 right-3 flex items-center" aria-live="polite">
                     <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-500 border-t-slate-100" />
                     <span className="sr-only">Loading repositories</span>
-                  </span>
+                  </output>
                 ) : null}
               </div>
               {githubRepoSearchError ? (
