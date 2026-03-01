@@ -37,6 +37,7 @@ describe('Sidebar', () => {
     expect(screen.getByRole('link', { name: /agents/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /artifacts/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /fleet/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /workspaces/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /settings/i })).toBeInTheDocument();
   });
 
@@ -65,6 +66,12 @@ describe('Sidebar', () => {
     const specsLink = screen.getByRole('link', { name: /specs/i });
     expect(specsLink.className).toContain('bg-slate-800');
     expect(specsLink.className).toContain('text-white');
+  });
+
+  test('renders Workspaces section and active workspace marker', async () => {
+    renderSidebar('/workspaces');
+    expect(screen.getByRole('heading', { name: 'Workspaces' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /workspaces/i })).toHaveClass('bg-slate-800');
   });
 
   test('inactive route gets default styling', () => {

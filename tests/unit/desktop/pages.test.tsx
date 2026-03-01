@@ -8,6 +8,7 @@ import { Specs } from '../../../apps/desktop/src/pages/Specs';
 import { Agents } from '../../../apps/desktop/src/pages/Agents';
 import { Artifacts } from '../../../apps/desktop/src/pages/Artifacts';
 import { Fleet } from '../../../apps/desktop/src/pages/Fleet';
+import { Workspaces } from '../../../apps/desktop/src/pages/Workspaces';
 import { Settings } from '../../../apps/desktop/src/pages/Settings';
 import { NotFound } from '../../../apps/desktop/src/pages/NotFound';
 
@@ -18,6 +19,7 @@ describe('placeholder pages', () => {
     ['Agents', Agents],
     ['Artifacts', Artifacts],
     ['Fleet', Fleet],
+    ['Workspaces', Workspaces],
     ['Settings', Settings],
     ['Page not found', NotFound],
   ])('%s page renders heading', (name, Component) => {

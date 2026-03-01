@@ -6,7 +6,7 @@ import { routes } from './routes';
 
 export function App() {
   return (
-    <MemoryRouter>
+    <MemoryRouter initialEntries={['/workspaces']}>
       <Routes>
         <Route element={<Layout />}>
           {routes.map((r) => (

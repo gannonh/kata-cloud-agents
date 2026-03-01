@@ -11,10 +11,10 @@ import { initRealtime as initMobileRealtime } from '../../apps/mobile/src/realti
 import { initRealtime as initWebRealtime } from '../../apps/web/src/realtime';
 
 describe('app shells', () => {
-  test('renders desktop app with sidebar and dashboard', () => {
+  test('renders desktop app with sidebar and workspaces', () => {
     render(<DesktopApp />);
     expect(screen.getByText('Kata Cloud Agents')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Dashboard' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'Workspaces' })).toBeInTheDocument();
   });
 
   test('renders mobile title', () => {

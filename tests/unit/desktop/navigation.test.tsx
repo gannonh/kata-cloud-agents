@@ -1,13 +1,14 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import { describe, expect, test } from 'vitest';
 
 import { App } from '../../../apps/desktop/src/App';
 
 describe('desktop app navigation', () => {
-  test('renders dashboard as default route', () => {
+  test('renders workspaces as default route', () => {
     render(<App />);
-    expect(screen.getByRole('heading', { name: 'Dashboard' })).toBeInTheDocument();
+    const main = screen.getByRole('main');
+    expect(within(main).getByRole('heading', { name: 'Workspaces' })).toBeInTheDocument();
   });
 
   test('renders breadcrumb scaffolding for the active route', () => {
@@ -15,7 +16,7 @@ describe('desktop app navigation', () => {
     const breadcrumbs = screen.getByRole('navigation', { name: /breadcrumbs/i });
     expect(breadcrumbs).toBeInTheDocument();
     expect(breadcrumbs).toHaveTextContent('Overview');
-    expect(breadcrumbs).toHaveTextContent('Dashboard');
+    expect(breadcrumbs).toHaveTextContent('Workspaces');
   });
 
   test.each([
@@ -23,11 +24,13 @@ describe('desktop app navigation', () => {
     ['Agents'],
     ['Artifacts'],
     ['Fleet'],
+    ['Workspaces'],
     ['Settings'],
   ])('navigates to %s page', (name) => {
     render(<App />);
     fireEvent.click(screen.getByRole('link', { name: new RegExp(name, 'i') }));
-    expect(screen.getByRole('heading', { name })).toBeInTheDocument();
+    const main = screen.getByRole('main');
+    expect(within(main).getByRole('heading', { name })).toBeInTheDocument();
   });
 
   test('uses long breadcrumb label for Specs route', () => {

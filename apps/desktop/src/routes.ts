@@ -2,6 +2,7 @@ import {
   LayoutDashboard,
   FileText,
   Bot,
+  FolderGit2,
   Package,
   Server,
   Settings,
@@ -17,6 +18,7 @@ import { Agents } from './pages/Agents';
 import { Artifacts } from './pages/Artifacts';
 import { Fleet } from './pages/Fleet';
 import { Settings as SettingsPage } from './pages/Settings';
+import { Workspaces } from './pages/Workspaces';
 
 export type RouteId =
   | 'dashboard'
@@ -25,6 +27,7 @@ export type RouteId =
   | 'agents'
   | 'artifacts'
   | 'fleet'
+  | 'workspaces'
   | 'settings';
 
 export type NavGroup = 'command-center' | 'admin';
@@ -98,6 +101,15 @@ export const routes: AppRoute[] = [
     navGroup: 'command-center',
     navLabel: 'Fleet',
     breadcrumbLabel: 'Fleet',
+  },
+  {
+    id: 'workspaces',
+    path: '/workspaces',
+    icon: FolderGit2,
+    component: Workspaces,
+    navGroup: 'command-center',
+    navLabel: 'Workspaces',
+    breadcrumbLabel: 'Workspaces',
   },
   {
     id: 'settings',

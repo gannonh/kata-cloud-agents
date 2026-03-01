@@ -3,6 +3,14 @@ import { describe, expect, test } from 'vitest';
 import { routes } from '../../../apps/desktop/src/routes';
 
 describe('desktop route metadata', () => {
+  test('workspaces route is configured for nav and breadcrumbs', () => {
+    const workspacesRoute = routes.find((route) => route.path === '/workspaces');
+
+    expect(workspacesRoute?.path).toBe('/workspaces');
+    expect(workspacesRoute?.navLabel).toBe('Workspaces');
+    expect(workspacesRoute?.breadcrumbLabel).toBe('Workspaces');
+  });
+
   test('all navigable routes expose nav and breadcrumb metadata', () => {
     for (const route of routes.filter((item) => item.nav !== false)) {
       expect(route.navLabel).toBeTruthy();
