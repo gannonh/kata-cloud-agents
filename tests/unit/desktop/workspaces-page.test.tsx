@@ -130,7 +130,7 @@ describe('Workspaces page', () => {
     render(<Workspaces />);
     await user.click(screen.getByRole('button', { name: /clone remote/i }));
 
-    expect(await screen.findByLabelText(/loading repositories/i)).toBeInTheDocument();
+    expect(await screen.findByRole('status')).toBeInTheDocument();
     resolveRepos?.([
       {
         nameWithOwner: 'org/repo',
@@ -141,7 +141,7 @@ describe('Workspaces page', () => {
     ]);
 
     await waitFor(() => {
-      expect(screen.queryByLabelText(/loading repositories/i)).not.toBeInTheDocument();
+      expect(screen.queryByRole('status')).not.toBeInTheDocument();
     });
   });
 

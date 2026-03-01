@@ -339,9 +339,11 @@ export function Workspaces() {
                 {isLoadingGithubRepos ? (
                   <span
                     className="absolute inset-y-0 right-3 flex items-center"
-                    aria-label="Loading repositories"
+                    role="status"
+                    aria-live="polite"
                   >
                     <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-500 border-t-slate-100" />
+                    <span className="sr-only">Loading repositories</span>
                   </span>
                 ) : null}
               </div>
